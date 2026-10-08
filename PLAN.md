@@ -14,6 +14,8 @@ Entering a supported dungeon on Mythic difficulty also opens the window with the
 - Use focused mocked tests for state transitions, encounter resolution, and delayed data. Verify game APIs and frame interaction inside WoW.
 - Checked items record completed implementation or automated validation. Live visual/input checks remain unchecked until performed in WoW. Unimplemented future work also remains unchecked.
 
+Live verification update (2026-10-08): The user confirmed completion of all 17 previously unchecked live-validation items in Phases 1 through 6.5. Those items are now checked based on that confirmation. Earlier validation paragraphs and supporting test documents describe the implementation-time status; their pending-live statements are superseded by this update for these items. Applying the Phase 9 skins to shared-item controls remains unchecked until Phase 9.
+
 ## Phase 1: Correct automatic opening
 
 Addresses finding 1: ordinary hostile targets currently pass the boss check.
@@ -42,7 +44,7 @@ Acceptance checks:
 
 Live acceptance (user):
 
-- [ ] In WoW, verify raid boss prompting, trash/dungeon/outdoor exclusions, disabled automation, and login/reload during combat.
+- [x] In WoW, verify raid boss prompting, trash/dungeon/outdoor exclusions, disabled automation, and login/reload during combat.
 
 Validation: Phase 1 originally passed 25 mocked Lua checks. The suite is expanded by Phase 2 below. Live WoW validation remains pending. Classification/skull-level detection is an interim heuristic; encounter identity remains Phase 3 work. Phase 2 removes the previous saved visibility restoration.
 
@@ -76,7 +78,7 @@ Acceptance checks:
 
 Live acceptance (user):
 
-- [ ] In WoW, verify close button, Escape, dismissal/retargeting, post-wipe prompting, manual preview, and combat/zone closing.
+- [x] In WoW, verify close button, Escape, dismissal/retargeting, post-wipe prompting, manual preview, and combat/zone closing.
 
 Validation: `Tests/AutoShow.lua` passes 78 checks and exercises the production database, event, window, column, command, and auto-show modules with Lua 5.1 frame mocks. Live WoW validation of the template close button, Escape, combat frame interaction, and event timing remains pending; checked acceptance items reflect mocked coverage.
 
@@ -117,7 +119,7 @@ Acceptance checks:
 - [x] Duplicate events, target changes, combat cycles after the prompt, and keystone start do not repeatedly open the window.
 - [x] Dismissal, exit/re-entry, combat-deferred entry, login/reload, active-key entry, disabled automatic opening, and manual preview follow the rules above.
 - [x] Existing raid lifecycle checks still pass.
-- [ ] Verify actual entry and keystone event timing in WoW.
+- [x] Verify actual entry and keystone event timing in WoW.
 
 Validation: `Tests/AutoShow.lua` passes 199 checks using Lua 5.1 through Lupa, exercising the production lifecycle, UI, commands, events, and settings modules. This includes all original raid checks and dungeon entry, duplicate events, target independence, dismissal, combat deferral/cancellation, login/reload, active-key difficulty, disabled automation, manual preview, identity/difficulty invalidation, and exit/re-entry. Live WoW validation remains pending; checked acceptance items reflect mocked coverage.
 
@@ -165,7 +167,7 @@ Acceptance checks:
 
 Live acceptance (user):
 
-- [ ] In WoW, verify supported current/older raid targets, multi-boss identities, unsupported-target rejection, and difficulty/context changes.
+- [x] In WoW, verify supported current/older raid targets, multi-boss identities, unsupported-target rejection, and difficulty/context changes.
 
 Validation: `Tests/AutoShow.lua` passes 237 checks with Lua 5.1 through Lupa, including all earlier lifecycle scenarios updated to use resolved identities. Phase 3 coverage includes all six Voidspire encounters, both Silken Court units without skull-level classification, unknown/trash/malformed/restricted identities, missing APIs and journal data, mismatched instance/encounter IDs, raid difficulty and encounter changes, unsupported/ambiguous dungeons, delayed challenge-map catalog, reward-source changes, and no shared Journal mutations. Checked acceptance items reflect mocked coverage. Live pre-combat targeting and Retail API/event timing remain pending.
 
@@ -204,7 +206,7 @@ Primary files: new `Modules/LootProvider.lua`, provider-owned event handling, `S
 
 Acceptance checks:
 
-- [ ] Each spec's items match the Adventure Guide under equivalent encounter, difficulty, and filters. (Live comparison pending.)
+- [x] Each spec's items match the Adventure Guide under equivalent encounter, difficulty, and filters. (Live comparison pending.)
 - [x] Empty eligible loot is distinguishable from loading or failure.
 - [x] Rapid boss/difficulty changes never render obsolete results.
 - [x] Missing names/icons populate after data arrives without a reload.
@@ -212,8 +214,8 @@ Acceptance checks:
 
 Live acceptance (user):
 
-- [ ] Compare dungeon item identities with live Mythic+ rewards, including before a key starts; confirm the agreed comparison pool is accurate.
-- [ ] In WoW, verify queries preserve Adventure Guide filters/selection, do not open or disrupt the Guide, and recover delayed names/icons without a reload.
+- [x] Compare dungeon item identities with live Mythic+ rewards, including before a key starts; confirm the agreed comparison pool is accurate.
+- [x] In WoW, verify queries preserve Adventure Guide filters/selection, do not open or disrupt the Guide, and recover delayed names/icons without a reload.
 
 Validation: 386 Lua 5.1 mocked checks pass through Lupa: 79 provider checks, 40 production provider/window integration checks, and all 267 existing lifecycle/resolver/debug checks. Checked acceptance items reflect mocked coverage; live Adventure Guide equivalence, full current Mythic+ chest-pool accuracy, UI/event behavior, and client restrictions remain pending. Evidence, request/result contract, restoration limits, and the live acceptance procedure are documented in `Tests/LootSources.md`.
 
@@ -246,8 +248,8 @@ Addresses finding 2: columns currently contain only icons and labels.
 - [x] Test compact dungeon headers, enlarged dimensions/layering, tooltip layering, and ready-message cleanup.
 - [x] Enlarge spec icons/names to 56 pixels/22-point text and loot icons/names to 40 pixels/18-point text; increase row height and header spacing.
 - [x] Use Blizzard's Journal-style `ProcessInfo` hyperlink tooltip path with `compareItem = true`, reset tooltip parent/alpha, and preserve hover across equivalent result refreshes.
-- [ ] After reload, verify larger icons/text and both the primary item tooltip and equipped-item comparisons remain visible above the window with the installed comparison addon.
-- [ ] After reload, visually confirm the larger window, primary item tooltip alongside equipped-item comparisons, compact Murder Row header, and disappearance of loading messages.
+- [x] After reload, verify larger icons/text and both the primary item tooltip and equipped-item comparisons remain visible above the window with the installed comparison addon.
+- [x] After reload, visually confirm the larger window, primary item tooltip alongside equipped-item comparisons, compact Murder Row header, and disappearance of loading messages.
 
 ### 5.2 Add column interaction states
 
@@ -268,11 +270,11 @@ Automated acceptance:
 
 Live visual/input acceptance (user):
 
-- [ ] Different class spec counts fit without overlap or clipped lists in WoW, including long localized names and multiple UI scales.
-- [ ] Long loot lists remain usable through wheel and scrollbar scrolling in WoW; the last row is reachable and spec headers stay visible.
-- [ ] Moving across headers, background, child rows, and scrollbars does not flicker or lose the column highlight in WoW.
-- [ ] Tooltips, scrolling, and title dragging do not interfere in WoW. Selection stays disabled in Phase 5; repeat column-selection interaction after Phase 6.
-- [ ] Visually verify raid/difficulty and dungeon/Mythic+ headers, item icons/names, and loading, empty, unsupported, failure, hover, and disabled states.
+- [x] Different class spec counts fit without overlap or clipped lists in WoW, including long localized names and multiple UI scales.
+- [x] Long loot lists remain usable through wheel and scrollbar scrolling in WoW; the last row is reachable and spec headers stay visible.
+- [x] Moving across headers, background, child rows, and scrollbars does not flicker or lose the column highlight in WoW.
+- [x] Tooltips, scrolling, title dragging, and the completed Phase 6 column-selection interaction do not interfere in WoW.
+- [x] Visually verify raid/difficulty and dungeon/Mythic+ headers, item icons/names, and loading, empty, unsupported, failure, hover, and disabled states.
 
 Validation: 507 unique checks pass under Lua 5.1 through Lupa: 267 lifecycle/resolver checks, 79 provider checks, 44 provider/window integration checks, and 117 presentation checks. The checked automated acceptance items reflect mocked coverage of two/three/four specs, UI dimensions, long lists, fixed headers, row reuse, scroll clamping/preservation, child hover continuity, item-link tooltips, disabled/selected states, shared left-click routing, and title-only dragging. Live WoW visual and input validation remains pending; follow `Tests/WindowSources.md`. The real confirmed specialization setter remains Phase 6; production selection stays disabled.
 
@@ -372,7 +374,7 @@ Make options accessible through the game settings, preview window, slash command
 - [x] Centralize opening the registered options category so every entry point reaches the same page without duplicate registration.
 - [x] Add `/spek options` and `/spek o` to open options directly; support the same subcommands under `/spekifier`.
 - [x] Add a visible gear button with an **Options** tooltip to the `/spek t` window, including empty/unsupported preview states. Keep its hit area separate from title dragging, closing, and loot selection.
-- [ ] Keep options accessible independently of automatic-opening preferences and encounter eligibility; verify settings-opening behavior during combat on the supported client. Implementation and mocked independence checks pass; live combat verification remains pending.
+- [x] Keep options accessible independently of automatic-opening preferences and encounter eligibility; verify settings-opening behavior during combat on the supported client. Implementation and mocked independence checks pass; live combat verification remains pending.
 
 ### 6.5.2 Add a minimap launcher and visibility preference
 
@@ -388,8 +390,8 @@ Make options accessible through the game settings, preview window, slash command
 - [x] Expand `/spek help` with options and minimap aliases; document all entry points, click actions, and the hide checkbox in `README.md`.
 - [x] Register new runtime files and any chosen bundled launcher dependencies in the manifest in dependency order.
 - [x] Add focused mocked coverage for shared options routing, command aliases, visibility synchronization, defaults/migration, saved position, and repeat initialization.
-- [ ] Verify in WoW that the Addons category, gear, options commands, and minimap right-click open the same page; verify minimap left-click preserves manual-preview combat/context behavior.
-- [ ] Verify checkbox and both minimap commands stay synchronized, apply immediately, survive reload/login, and restore a hidden button. Check dragging, tooltip, placement, and gear hit areas at multiple UI scales.
+- [x] Verify in WoW that the Addons category, gear, options commands, and minimap right-click open the same page; verify minimap left-click preserves manual-preview combat/context behavior.
+- [x] Verify checkbox and both minimap commands stay synchronized, apply immediately, survive reload/login, and restore a hidden button. Check dragging, tooltip, placement, and gear hit areas at multiple UI scales.
 
 Validation: `Tests/Options.lua` passes 63 focused Lua 5.1 checks plus the existing 267 lifecycle checks. All seven suites pass (831 unique checks). Checked implementation and acceptance items reflect mocked coverage and source verification; live category rendering, combat Settings restrictions, input/drag/tooltip placement, persistence and multiple-scale checks remain pending. See [API evidence, automated coverage and required live procedure](Tests/OptionsSources.md). The combat-opening portion of 6.5.1 is implemented through Blizzard's native Settings path but still requires live verification.
 
@@ -409,24 +411,31 @@ Acceptance checks:
 
 - [x] Add focused automated coverage for boss rejection, visibility/dismissal transitions, encounter mapping, and stale asynchronous results.
 - [x] Test fresh saved variables and upgrades from the existing layout with mocked settings migration.
-- [ ] Verify fresh saved variables and upgrades through actual WoW login/reload.
-- [ ] Run in-game checks for outdoor areas, dungeon bosses, raid trash, supported raid bosses, multi-boss fights, dead bosses, combat, wipes, and zone exits.
-- [ ] Exercise reload/login, rapid target changes, difficulty changes, slow item loading, dismissal, and manual preview.
-- [ ] Validate Mythic entry before a key, active-key entry, keystone start, duplicate entry events, combat deferral, dismissal across target/combat changes, exit/re-entry, and Normal/Heroic exclusion.
-- [ ] Confirm full dungeon-wide Mythic+ chest loot per spec and confirmed selection in WoW, including before a key starts. Verify obsolete dungeon results are discarded and dungeon exit prevents selection using stale context.
 - [x] Verify with automated checks that repeated targeting does not accumulate frames, handlers, or unnecessary loot requests.
-- [ ] Confirm repeated-target behavior and frame/handler stability in WoW.
-- [ ] Check for Lua errors and API restrictions on the supported Retail build.
 
 ### 7.2 Document and package
 
 - [x] Document raid-target and Mythic dungeon-entry workflows, supported scope, commands, preview behavior, and known limitations in `README.md`, including Mythic+ preview before a key starts.
 - [ ] Document the live-validated supported Retail build and final confirmed-selection workflow after integration acceptance.
 - [x] Expand `/spek debug` with encounter, difficulty, visibility reason, loading state, and per-spec loot counts while keeping normal operation quiet.
-- [ ] Add confirmed loot specialization to `/spek debug` after Phase 6.
+- [x] Add confirmed loot specialization to `/spek debug` after Phase 6.
 - [ ] Set accurate interface/version metadata and replace the placeholder author when provided.
 - [x] Verify runtime files introduced through Phase 5 appear in the correct manifest order.
-- [ ] Verify final manifest order after remaining phases introduce runtime files.
+- [x] Verify final manifest order for all current runtime files through Phase 7; repeat when Phases 8/9 introduce files.
+
+Phase 7 automated validation (2026-10-08): all eight Lua 5.1 suites pass, totaling 850 unique checks. `Tests/Integration.lua` adds 19 confirmed-specialization debug checks. `Tests/run_tests.py` verifies syntax, exact manifest order and registration of all 14 runtime files, then optionally creates and validates a clean-install candidate archive. Debug reports the getter's raw setting, Current Specialization/explicit mode and effective confirmed ID/name even with the preview dismissed. The live integration checklist and release record are in `Tests/IntegrationSources.md`. Fresh/upgrade login, clean-folder installation, final build/interface and release author remain pending user evidence; prior Phase 1–6.5 confirmation is not counted as Phase 7 acceptance.
+
+### Manual acceptance checks (in WoW)
+
+Record the tested Retail version/build/interface and results in `Tests/IntegrationSources.md`. Check these items only after live verification; the earlier Phase 1 through 6.5 confirmation does not complete Phase 7 integration acceptance.
+
+- [ ] Verify fresh saved variables and upgrades through actual WoW login/reload.
+- [ ] Run in-game checks for outdoor areas, dungeon bosses, raid trash, supported raid bosses, multi-boss fights, dead bosses, combat, wipes, and zone exits.
+- [ ] Exercise reload/login, rapid target changes, difficulty changes, slow item loading, dismissal, and manual preview.
+- [ ] Validate Mythic entry before a key, active-key entry, keystone start, duplicate entry events, combat deferral, dismissal across target/combat changes, exit/re-entry, and Normal/Heroic exclusion.
+- [ ] Confirm full dungeon-wide Mythic+ chest loot per spec and confirmed selection in WoW, including before a key starts. Verify obsolete dungeon results are discarded and dungeon exit prevents selection using stale context.
+- [ ] Confirm repeated-target behavior and frame/handler stability in WoW.
+- [ ] Check for Lua errors and API restrictions on the supported Retail build.
 - [ ] Install from a clean addon folder and repeat the primary boss-target-to-loot-selection workflow.
 
 ## Phase 8: Add addon options for automatic opening

@@ -114,6 +114,17 @@ local function HandleSlashCommand(msg)
         print("  Loot State: " .. tostring(windowState.lootState))
         print("  Loot Failure: " .. tostring(windowState.lootFailureReason))
         PrintSpecLootCounts()
+        -- Refresh from the game even when the preview is dismissed.
+        if Spekifier.RefreshLootSpecialization then Spekifier:RefreshLootSpecialization() end
+        print("  Loot Specialization Setting: " .. tostring(windowState.lootSpecSetting))
+        print("  Loot Specialization Mode: " .. (windowState.lootSpecSetting == 0 and
+            "Current Specialization" or (windowState.confirmedSpecID and "Explicit" or "Unavailable")))
+        print("  Confirmed Loot Specialization ID: " .. tostring(windowState.confirmedSpecID))
+        local confirmedName
+        for _, column in ipairs(Spekifier:GetAllSpecColumns()) do
+            if column.specID == windowState.confirmedSpecID then confirmedName = column.specName end
+        end
+        print("  Confirmed Loot Specialization: " .. tostring(confirmedName or "unavailable"))
         print("  Selection Allowed: " .. tostring(windowState.selectionAllowed))
     else
         Spekifier:Print("Unknown command. Type /spek help for commands.")
@@ -124,3 +135,4 @@ end
 SLASH_SPEKIFIER1 = "/spekifier"
 SLASH_SPEKIFIER2 = "/spek"
 SlashCmdList["SPEKIFIER"] = HandleSlashCommand
+

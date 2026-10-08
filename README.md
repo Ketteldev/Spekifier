@@ -30,7 +30,7 @@ Contains feature modules:
 ## Load Order
 Files are loaded in the order specified in Spekifier.toc:
 1. Core files (Init, Database, Debug, Events)
-2. EncounterResolver and LootProvider
+2. EncounterResolver, LootProvider and LootSpecialization
 3. UI files (Options, Minimap, MainWindow, SpecColumns)
 4. Remaining modules (Commands, AutoShow)
 5. Main entry point (Spekifier.lua)
@@ -134,3 +134,13 @@ The minimap button is shown by default. **Left-click** toggles the manual previe
 On the options page, check **Hide minimap button** to hide it; uncheck to show it. `/spek minimap` and `/spek mm` each flip the same saved preference, apply immediately, synchronize an open checkbox and print whether the button is shown or hidden. Both commands also work under `/spekifier`. Restore a hidden button through the commands or options page; the options commands and preview gear remain accessible. Existing false preferences and unrelated settings are preserved during migration.
 
 Options use Blizzard's native Settings opening path. Combat preview restrictions remain unchanged. Live Settings-opening behavior during combat, launcher placement, gear hit areas and multiple UI scales still require WoW validation. Run `lua Tests/Options.lua` for 63 focused options/launcher checks plus the lifecycle suite. All seven suites pass with Lua 5.1, totaling 831 unique checks. See [API evidence and the live acceptance procedure](Tests/OptionsSources.md).
+
+## Integration validation and release candidate (Phase 7)
+
+Run all eight mocked suites with Lua 5.1, including `lua Tests/Integration.lua`, or use `python Tests/run_tests.py` with the Python `lupa` package installed. All 850 unique checks pass. The runner also compiles all Lua files and verifies the final manifest order and complete registration of runtime files.
+
+`/spek debug` now reads the game-confirmed loot specialization even with the preview dismissed. It reports the raw loot setting (0 means Current Specialization), mode, effective confirmed spec ID/name and selection availability. Getter failures and invalid IDs report unavailable confirmation. The command preserves dismissal and does not reopen the preview.
+
+Build a clean-install candidate with `python Tests/run_tests.py --package Spekifier-phase7-candidate.zip`. The archive contains one `Spekifier` folder with the manifest, runtime files and documentation; it excludes development scripts and saved variables. All checks must pass before packaging, and archive contents are verified. Extract that folder into the Retail client's `Interface/AddOns` directory for the clean-install acceptance test.
+
+The user's live confirmation covers Phases 1 through 6.5 and supersedes their earlier pending-live notes above. Final Phase 7 integration acceptance, exact supported Retail version/build/interface, author metadata and clean-install testing remain pending. The current manifest is not evidence of tested compatibility. Record results using [the Phase 7 acceptance checklist](Tests/IntegrationSources.md) before treating the candidate as a validated release. Future auto-show options and skins remain Phases 8 and 9.
