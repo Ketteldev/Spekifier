@@ -1,0 +1,30 @@
+## Interface: 120100
+## Title: Spekifier
+## Notes: A World of Warcraft add-on
+## Author: YourName
+## Version: 1.0.0
+## SavedVariables: SpekifierDB
+
+# Core files
+Core\Init.lua
+Core\Database.lua
+Core\Debug.lua
+Core\Events.lua
+
+# Encounter identity (before UI and module consumers)
+Modules\EncounterResolver.lua
+Modules\LootProvider.lua
+Modules\LootSpecialization.lua
+
+# UI files
+UI\Options.lua
+UI\Minimap.lua
+UI\MainWindow.lua
+UI\SpecColumns.lua
+
+# Modules
+Modules\Commands.lua
+Modules\AutoShow.lua
+
+# Main entry point
+Spekifier.lua
