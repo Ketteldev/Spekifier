@@ -17,6 +17,7 @@ Modules\LootProvider.lua
 Modules\LootSpecialization.lua
 
 # UI files
+UI\Skins.lua
 UI\Options.lua
 UI\Minimap.lua
 UI\MainWindow.lua

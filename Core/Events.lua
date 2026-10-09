@@ -35,6 +35,7 @@ end
 function Spekifier:OnPlayerLogin()
     self:DebugPrint("Welcome,", UnitName("player") .. "!")
 
+    if self.InitializeWindowSkin then self:InitializeWindowSkin() end
     if self.InitializeOptions then self:InitializeOptions() end
     if self.InitializeMinimap then self:InitializeMinimap() end
 

@@ -10,7 +10,7 @@ Run each Lua suite with Lua 5.1 from the repository root, or run `python Tests/r
 
 ## Live acceptance record
 
-Status: pending Phase 7 integration acceptance. The user's earlier confirmation covers Phases 1 through 6.5, not this final combined workflow.
+Status: deferred until all implementation phases are complete; tracked in `PLAN.md` under `## Manual Acceptance`. Phase 7 implementation is complete. The user's earlier confirmation covers Phases 1 through 6.5, not this final combined workflow.
 
 Record date, `GetBuildInfo()` version/build/interface, addon version, UI scale, installed UI addons, tested character/class/specs and result for every step. Obtain version/build/interface in game with `/dump GetBuildInfo()`. Confirm the manifest Interface matches the tested client before release. Author and final release metadata await user input; current metadata is not a compatibility claim.
 
@@ -23,4 +23,4 @@ Record date, `GetBuildInfo()` version/build/interface, addon version, UI scale, 
 7. Click each spec in supported raid/dungeon contexts, including before a key starts and while loot loads. The Blizzard getter/menu confirms the intended spec; success closes the window, emits the exact confirmation and preserves dismissal. Test external loot-spec changes, Current Specialization following active spec, setter failure and combat/context change at click time. `/spek debug` reports raw setting, effective confirmed ID/name and availability without reopening.
 8. Repeat targeting, preview opens/closes, initialization and reload. Observe stable frame/handler/request behavior, correct delayed loading, tooltips, independent scrolling/shared items and no stale content. Verify options/gear/minimap access and saved preferences in the clean install. Monitor Lua errors and taint/API restrictions on the recorded Retail build.
 
-Only check the corresponding live PLAN items after recording successful results. Final release requires confirmed build/interface, author (when supplied), final workflow documentation and this clean-install primary boss-to-selection test. Phases 8 and 9 remain separate future work.
+Only check the corresponding items in PLAN.md's Manual Acceptance section after recording successful results. Final release requires confirmed build/interface, author (when supplied), final workflow documentation and this clean-install primary boss-to-selection test. Complete Phases 8 and 9 before running this final integration acceptance pass, and include their manual checks from PLAN.md.

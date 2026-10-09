@@ -35,7 +35,7 @@ local function fixture(overrides, saved)
     UISpecialFrames, SlashCmdList, SpekifierDB = {}, {}, saved
     UIParent = { GetWidth = function() return state.uiWidth or 1000 end,
         GetHeight = function() return state.uiHeight or 800 end }
-    function CreateFrame(_, name)
+    function CreateFrame(_, name, parent, template)
         local frame = { scripts = {}, hooks = {}, events = {}, shown = true,
             registrations = 0, bindings = 0, showCount = 0, alpha = 1 }
         function frame:RegisterEvent(event)
@@ -69,6 +69,8 @@ local function fixture(overrides, saved)
         function frame:IsShown() return self.shown end
         function frame:GetFont() return "Fonts/FRIZQT__.TTF", self.fontSize or 12, "" end
         function frame:SetFont(font, size, flags) self.fontSize = size end
+        function frame:SetEnabled(value) self.enabled = not not value end
+        function frame:IsEnabled() return self.enabled ~= false end
         function frame:SetChecked(value) self.checked = not not value end
         function frame:GetChecked() return self.checked end
         function frame:SetText(text) self.text = text end
@@ -105,6 +107,27 @@ local function fixture(overrides, saved)
             if self.value == value then return end
             self.value = value
             self:Fire("OnValueChanged", value)
+        end
+        if state.skins then
+            function frame:SetResizable(value) self.resizable = value end
+            function frame:SetResizeBounds(...) self.resizeBounds = { ... } end
+            function frame:StartSizing(corner) self.sizing = corner end
+            function frame:SetRotation(value) self.rotation = value end
+            function frame:SetNormalTexture(value) self.normalTexture = value end
+            function frame:SetPushedTexture(value) self.pushedTexture = value end
+            function frame:GetNormalTexture() return self.normalRegion end
+            function frame:GetPushedTexture() return self.pushedRegion end
+            function frame:SetTextColor(...) self.textColor = { ... } end
+            if template == "BasicFrameTemplateWithInset" then
+                for _, region in ipairs({ "Bg", "TitleBg", "TopBorder", "BottomBorder", "LeftBorder", "RightBorder", "TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner", "BotLeftCorner", "BotRightCorner", "TopTileStreaks", "Inset", "InsetBg", "InsetBorderTopLeft", "InsetBorderTopRight", "InsetBorderBottomLeft", "InsetBorderBottomRight", "InsetBorderTop", "InsetBorderBottom", "InsetBorderLeft", "InsetBorderRight", "CloseButton" }) do frame[region] = CreateFrame() end
+                frame.CloseButton.normalRegion = CreateFrame()
+                frame.CloseButton.pushedRegion = CreateFrame()
+            end
+            function frame:SetSize(width, height)
+                local changed = self.width ~= width or self.height ~= height
+                self.width, self.height = width, height
+                if changed then self:Fire("OnSizeChanged", width, height) end
+            end
         end
         if name then _G[name] = frame end
         frames[#frames + 1] = frame
@@ -201,7 +224,21 @@ local function fixture(overrides, saved)
             assert(loadfile(file))("Spekifier", namespace)
         end
     end
+    if state.skins then
+        C_AddOns = { IsAddOnLoaded = function(name) local loaded = state.loadedAddons and state.loadedAddons[name] or false; return loaded, loaded end }
+        function UIDropDownMenu_SetWidth(d, width) d.width = width end
+        function UIDropDownMenu_SetText(d, text) d.text = text end
+        function UIDropDownMenu_CreateInfo() return {} end
+        function UIDropDownMenu_AddButton(info) state.menu[#state.menu + 1] = info end
+        function UIDropDownMenu_Initialize(d, callback) d.initialize = callback end
+        state.menu = {}
+        assert(loadfile("UI/Skins.lua"))("Spekifier", namespace)
+    end
     addon:InitializeDatabase()
+    if state.skins and state.startupAddon then
+        state.loadedAddons = state.loadedAddons or {}
+        state.loadedAddons[state.startupAddon] = true
+    end
     addon:OnPlayerLogin()
     local function event(name, unit) addon.autoShowFrame:Fire("OnEvent", name, unit) end
     return addon, state, event, frames
@@ -528,6 +565,7 @@ event("CHALLENGE_MODE_START")
 expect(window:IsShown() and runtime.contextKey == key and window.showCount == 1 and
     window.encounterData == nil, "automatic keystone transition clears data without another prompt")
 state.instanceType = "raid"
+state.difficultyID = 14
 state.instanceID = 2912
 state.exists, state.attackable, state.dead = true, true, false
 state.classification, state.level = "worldboss", -1

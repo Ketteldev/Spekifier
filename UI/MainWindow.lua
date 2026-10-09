@@ -105,14 +105,23 @@ function Spekifier:CreateMainWindow()
     mainWindow.header:SetWordWrap(true)
     mainWindow.status = mainWindow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     mainWindow.status:SetPoint("BOTTOMLEFT", mainWindow, "BOTTOMLEFT", 20, 14)
-    mainWindow.status:SetPoint("BOTTOMRIGHT", mainWindow, "BOTTOMRIGHT", -20, 14)
+    mainWindow.status:SetPoint("BOTTOMRIGHT", mainWindow, "BOTTOMRIGHT", -36, 14)
     mainWindow.status:SetHeight(38)
     mainWindow.status:SetWordWrap(true)
     self.mainWindow = mainWindow
     self:CreateSpecializationColumns()
     mainWindow:RegisterEvent("UI_SCALE_CHANGED")
     mainWindow:RegisterEvent("DISPLAY_SIZE_CHANGED")
-    mainWindow:SetScript("OnEvent", function() self:FitLootWindow() end)
+    mainWindow:SetScript("OnEvent", function()
+        if self.WindowSizeLimits then
+            local lw, lh, hw, hh = self:WindowSizeLimits()
+            mainWindow:SetResizeBounds(lw, lh, hw, hh)
+            mainWindow:SetSize(math.max(lw, math.min(hw, mainWindow:GetWidth())), math.max(lh, math.min(hh, mainWindow:GetHeight())))
+        end
+        self:FitLootWindow()
+    end)
+    if self.InitializeWindowSize then self:InitializeWindowSize() end
+    if self.ApplyWindowSkin then self:ApplyWindowSkin() end
     self:FitLootWindow()
     self:UpdateWindowContext(nil)
 end

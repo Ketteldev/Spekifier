@@ -11,6 +11,7 @@ Contains the fundamental systems and initialization logic:
 
 ### UI/
 Contains all user interface components:
+- **Skins.lua** - Built-in skin registry, styling, responsive layout and saved resizing
 - **MainWindow.lua** - Creates and manages the main window frame
 - **Options.lua** - Shared Retail Addons settings page, preview gear and minimap visibility preference
 - **Minimap.lua** - Draggable native preview/options launcher
@@ -31,7 +32,7 @@ Contains feature modules:
 Files are loaded in the order specified in Spekifier.toc:
 1. Core files (Init, Database, Debug, Events)
 2. EncounterResolver, LootProvider and LootSpecialization
-3. UI files (Options, Minimap, MainWindow, SpecColumns)
+3. UI files (Skins, Options, Minimap, MainWindow, SpecColumns)
 4. Remaining modules (Commands, AutoShow)
 5. Main entry point (Spekifier.lua)
 
@@ -125,9 +126,16 @@ The Selected marker reflects the game's getter when the preview is open. A confi
 
 Run `lua Tests/LootSpecialization.lua` for 95 focused checks plus the existing lifecycle suite. All suites pass with Lua 5.1 (768 unique checks). See [per-checkbox evidence and detailed live acceptance](Tests/SelectionSources.md). In-game Blizzard menu, event timing, visuals and taint validation remain pending.
 
-## Options and minimap launcher (Phase 6.5)
+## Options and minimap launcher
 
 Find **Spekifier** under **Escape -> Options -> Addons**. The preview's title-bar gear (tooltip: **Options**), `/spek options`, `/spek o`, and minimap right-click all open this same page. Options access is independent of automatic opening and encounter eligibility. The gear remains available in empty and unsupported previews.
+
+**Auto-show** enables automatic prompting. Its five indented choices (**Mythic+**, **LFR**, **Normal Raid**, **Heroic Raid**, **Mythic Raid**) independently control where prompts appear. All default to on, including when upgrading. Turning off Auto-show disables its child controls while preserving their choices; all choices survive reload/login. Minimap visibility remains independent.
+
+Mythic+ covers the end-of-run loot preview on both ordinary Mythic dungeon entry and active Mythic+ entry, including before a key starts. Normal/Heroic dungeons remain excluded. Raid options use actual instance difficulty: LFR 7/17, Normal 3/4/9/14 (including legacy 40-player), Heroic 5/6/15, and Mythic 16/233. Unmapped difficulties, including Story, Timewalking and world raids, do not automatically prompt. These categories never expand the supported encounter scope.
+
+Changes take effect immediately: disabling the applicable option closes an automatic preview; manual previews remain available through `/spek toggle` and the minimap launcher outside combat. Changing options preserves raid dismissal and consumed dungeon prompts. Enabling an eligible unshown visit permits its first prompt, with existing combat deferral. `/spek debug` includes the matching preference, its saved permission, and effective parent/child permission. See [Phase 8 validation and live procedure](Tests/AutoShowPreferencesSources.md).
+
 
 The minimap button is shown by default. **Left-click** toggles the manual preview through its normal combat/context/dismissal lifecycle; **right-click** opens options. **Drag** around the minimap to reposition it. Its position is saved across reload/login and adapts to minimap scale and size.
 
@@ -143,4 +151,16 @@ Run all eight mocked suites with Lua 5.1, including `lua Tests/Integration.lua`,
 
 Build a clean-install candidate with `python Tests/run_tests.py --package Spekifier-phase7-candidate.zip`. The archive contains one `Spekifier` folder with the manifest, runtime files and documentation; it excludes development scripts and saved variables. All checks must pass before packaging, and archive contents are verified. Extract that folder into the Retail client's `Interface/AddOns` directory for the clean-install acceptance test.
 
-The user's live confirmation covers Phases 1 through 6.5 and supersedes their earlier pending-live notes above. Final Phase 7 integration acceptance, exact supported Retail version/build/interface, author metadata and clean-install testing remain pending. The current manifest is not evidence of tested compatibility. Record results using [the Phase 7 acceptance checklist](Tests/IntegrationSources.md) before treating the candidate as a validated release. Future auto-show options and skins remain Phases 8 and 9.
+The user's live confirmation covers Phases 1 through 6.5 and supersedes their earlier pending-live notes above. Phases 1-7 implementation is complete. Final integration acceptance, exact supported Retail version/build/interface, author metadata and clean-install testing are deferred until all implementation phases are complete and tracked in [Manual Acceptance](PLAN.md#manual-acceptance). The current manifest is not evidence of tested compatibility. Record results using [the Phase 7 acceptance checklist](Tests/IntegrationSources.md) before treating the candidate as a validated release. Future auto-show options and skins remain Phases 8 and 9.
+
+## Window appearance and resizing
+
+Choose **Window skin** on the shared Spekifier options page: **Original** retains Blizzard-style chrome and gold accents; **Elles** uses dark panels, restrained slate borders and cyan accents. Both are built in and work without other UI addons. The dropdown remains available with Auto-show off.
+
+On the first login without a saved choice, Elles is selected if EllesmereUI or ElvUI has finished loading by PLAYER_LOGIN; otherwise Original is selected. Installed but disabled/unloaded addons do not count. Valid saved choices always win on subsequent logins, even if addons change. Unknown saved identifiers fall back to Original. Changes apply immediately without opening hidden windows or resetting dismissal, loot, scroll offsets, position or confirmed selection.
+
+Drag the **diagonal bottom-right resize grip** to change width and height. The title still moves the window; the grip has a separate hit area. Columns and scrolling areas adapt, including shared-item overflow. Size persists across closing, reopening, reload and login, and survives skin switching. Invalid dimensions use defaults, finite dimensions are clamped to usable minimums and current display bounds, and small displays scale the minimum layout to fit. Appearance and size preferences are account-wide.
+
+To add a built-in skin, call `Spekifier:RegisterWindowSkin("stable-id", "Display label", palette)` from a runtime file loaded after UI/Skins.lua and before PLAYER_LOGIN. Supply `bg`, `border`, `accent`, `selected`, `disabled`, and `text` as RGBA arrays plus a client-compatible `font` path; use the built-in palettes as examples. Stable identifiers are saved; labels appear automatically in the registry-driven dropdown. Shared styling owns reusable textures and resets template chrome on every switch. New/reused loot rows receive the active palette without changing item quality colors.
+
+Phase 9 automated checks and the visual specification are recorded in [Tests/SkinsSources.md](Tests/SkinsSources.md). Live visuals, comparison screenshots, and WoW resizing/interaction acceptance remain pending in PLAN.md; automated validation does not establish release readiness.

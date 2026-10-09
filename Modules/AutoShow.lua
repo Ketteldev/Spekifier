@@ -6,6 +6,14 @@ local targetGeneration, visitGeneration = 1, 0
 local dungeonVisit
 local entryRetryGeneration = 0
 
+-- Blizzard DifficultyUtil IDs. Legacy 40-player raids use Normal Raid.
+-- Unmapped difficulties (including Story and Timewalking) fail closed.
+local raidPreferences = {
+    [3] = "autoShowNormalRaid", [4] = "autoShowNormalRaid", [9] = "autoShowNormalRaid",
+    [14] = "autoShowNormalRaid", [5] = "autoShowHeroicRaid", [6] = "autoShowHeroicRaid",
+    [15] = "autoShowHeroicRaid", [7] = "autoShowLFR", [17] = "autoShowLFR",
+    [16] = "autoShowMythicRaid", [233] = "autoShowMythicRaid",
+}
 local function RequestDungeonData()
     if C_MythicPlus and C_MythicPlus.RequestMapInfo then
         C_MythicPlus.RequestMapInfo()
@@ -90,7 +98,11 @@ function Spekifier:RefreshAutoShow(event, allowOpening)
             context.journalInstanceID, context.encounterID, difficultyID,
             context.targetIdentity }, ":")) or nil
     if context then context.contextKey = autoShowState.contextKey end
-    autoShowState.shouldAutoShow = not not (self:GetSetting("enabled") and
+    autoShowState.preferenceKey = eligibleDungeon and "autoShowMythicPlus" or
+        (inRaidInstance and raidPreferences[difficultyID] or nil)
+    autoShowState.preferenceEnabled = not not (autoShowState.preferenceKey and self:GetSetting(autoShowState.preferenceKey))
+    autoShowState.autoShowPermission = not not (self:GetSetting("enabled") and autoShowState.preferenceEnabled)
+    autoShowState.shouldAutoShow = not not (autoShowState.autoShowPermission and
         autoShowState.contextKey and not inCombat)
     -- Validity and permission to prompt are separate: shown visits stay valid.
     autoShowState.canPrompt = autoShowState.shouldAutoShow and

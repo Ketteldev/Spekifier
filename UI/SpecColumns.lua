@@ -23,6 +23,11 @@ function Spekifier:RefreshColumnAppearance(column)
     column.visualState = selected and "selected" or (enabled and "available" or "disabled")
     column.frame.bg:SetColorTexture(selected and 0.12 or 0.08, selected and 0.32 or 0.08,
         selected and 0.18 or 0.08, 0.85)
+    if self.GetWindowPalette then
+        local p = self:GetWindowPalette()
+        column.frame.bg:SetColorTexture(unpack(selected and p.selected or (enabled and p.bg or p.disabled)))
+        column.hover:SetColorTexture(unpack(p.accent))
+    end
     column.hover:SetAlpha(hovered and 0.18 or 0)
     column.marker:SetText(selected and "Selected" or (enabled and "Click to select" or "Selection unavailable"))
     column.frame.icon:SetAlpha(1)
@@ -186,6 +191,7 @@ function Spekifier:RenderSharedLoot(items)
             strip.icons[i] = icon
         end
         if icon.item and (icon.item.itemID ~= item.itemID or icon.item.link ~= item.link) then HideTooltip(icon) end
+        if self.StyleLootElement then self:StyleLootElement(icon, true) end
         icon.item = item
         icon.icon:SetTexture(item.icon or 134400)
         icon:Show()
@@ -206,15 +212,20 @@ function Spekifier:RenderSharedLoot(items)
     if strip.contextKey ~= state.lootBinding then strip.offset = 0 end
     strip.contextKey = state.lootBinding
     strip:SetOffset(strip.offset)
+    if self.StyleScrollbar then
+        self:StyleScrollbar(strip.bar)
+        strip.label:SetTextColor(unpack(self:GetWindowPalette().text))
+    end
     strip.frame:SetShown(#items > 0)
     -- Retain the full column viewport, reclaiming all strip space when absent.
-    window:SetHeight(#items > 0 and 784 or 720)
+    if not self.LayoutLootWindow then window:SetHeight(#items > 0 and 784 or 720) end
     local columns = self:GetAllSpecColumns()
     local step = (window:GetWidth() - 40) / math.max(1, #columns)
     for i, column in ipairs(columns) do
         column.frame:ClearAllPoints()
         column.frame:SetPoint("TOPLEFT", window, "TOPLEFT", 20 + (i - 1) * step, #items > 0 and -154 or -90)
     end
+    if self.LayoutLootWindow then self:LayoutLootWindow() end
     self:FitLootWindow()
 end
 
@@ -238,6 +249,7 @@ local function CreateRow(self, column, index)
     row:SetScript("OnEnter", ShowItemTooltip)
     row:SetScript("OnLeave", HideTooltip)
     row:SetScript("OnHide", HideTooltip)
+    if self.StyleLootElement then self:StyleLootElement(row) end
     column.rows[index] = row
     return row
 end
@@ -254,7 +266,7 @@ function Spekifier:CreateSpecializationColumns()
     end
     window.specColumns = {}
     local width = math.min(1440, math.max(1080, count * 320 + 40))
-    window:SetSize(width, 720)
+    if not window.resizeGrip then window:SetSize(width, 720) end
     local step = (width - 40) / count
     for i = 1, count do
         local specID, specName, _, specIcon = GetSpecializationInfo(i)
@@ -358,6 +370,15 @@ function Spekifier:CreateSpecializationColumns()
             window.specColumns[#window.specColumns + 1] = column
         end
     end
+    if self.ApplyWindowSkin then self:ApplyWindowSkin() end
+    if self.LayoutLootWindow then
+        self:LayoutLootWindow()
+        if window.resizeGrip then
+            local lw, lh, hw, hh = self:WindowSizeLimits()
+            window:SetResizeBounds(lw, lh, hw, hh)
+            window:SetSize(math.max(lw, math.min(hw, window:GetWidth())), math.max(lh, math.min(hh, window:GetHeight())))
+        end
+    end
 end
 
 function Spekifier:RenderWindowLoot(result)
@@ -408,9 +429,11 @@ function Spekifier:RenderWindowLoot(result)
             column.message:SetText(reasons[data.reason])
         end
         if not state.resolvedContext then HideTooltip(column.frame) end
-        local height = math.max(listHeight, #items * rowHeight)
+        column.itemCount = #items
+        local viewport = column.viewportHeight or listHeight
+        local height = math.max(viewport, #items * rowHeight)
         column.content:SetHeight(height)
-        column.range = math.max(0, height - listHeight)
+        column.range = math.max(0, height - viewport)
         column.bar:SetMinMaxValues(0, column.range)
         column.bar:SetShown(column.range > 0)
         if column.contextKey ~= state.lootBinding then column.offset = 0 end

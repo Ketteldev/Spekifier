@@ -10,7 +10,7 @@ from lupa.lua51 import LuaRuntime
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = ('AutoShow', 'LootProvider', 'WindowLoot', 'WindowPresentation',
-          'SharedLoot', 'LootSpecialization', 'Options', 'Integration')
+          'SharedLoot', 'LootSpecialization', 'Options', 'Integration', 'AutoShowPreferences', 'Skins')
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
                if line.strip().endswith('.lua')]
     expected = ['Core/Init.lua', 'Core/Database.lua', 'Core/Debug.lua', 'Core/Events.lua',
                 'Modules/EncounterResolver.lua', 'Modules/LootProvider.lua',
-                'Modules/LootSpecialization.lua', 'UI/Options.lua', 'UI/Minimap.lua',
+                'Modules/LootSpecialization.lua', 'UI/Skins.lua', 'UI/Options.lua', 'UI/Minimap.lua',
                 'UI/MainWindow.lua', 'UI/SpecColumns.lua', 'Modules/Commands.lua',
                 'Modules/AutoShow.lua', 'Spekifier.lua']
     assert runtime == expected, 'Unexpected final manifest load order'
