@@ -13,6 +13,7 @@ local raidPreferences = {
     [14] = "autoShowNormalRaid", [5] = "autoShowHeroicRaid", [6] = "autoShowHeroicRaid",
     [15] = "autoShowHeroicRaid", [7] = "autoShowLFR", [17] = "autoShowLFR",
     [16] = "autoShowMythicRaid", [233] = "autoShowMythicRaid",
+    [250] = "autoShowWorldRaid",
 }
 local function RequestDungeonData()
     if C_MythicPlus and C_MythicPlus.RequestMapInfo then

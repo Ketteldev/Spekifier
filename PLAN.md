@@ -176,6 +176,23 @@ Implementation details:
 - Missing catalog data does not consume a visit prompt; `CHALLENGE_MODE_MAPS_UPDATE` reevaluates it. Existing visit dismissal, keystone coalescing, and combat deferral remain intact. Visible contexts discard data on difficulty, encounter, unit, visit, journal instance, or reward-source changes.
 - `/spek debug` reports resolved identity and explicit failure reasons; unsupported manual previews show the reason with disabled selection. Selection remains gated until Phase 6.
 
+### Phase 3 follow-up: Nek'zali missing raid mapping (2026-10-09)
+
+- [x] Diagnose the reported LFR failure: `unsupported-raid`, automatic opening enabled, outside combat.
+- [x] Add externally verified game instance 3004 / Journal instance 1320 / NPC 259927 / Journal encounter 2888 to the raid catalog; document supported scope and [source evidence/procedure](spec/Modules/Context/EncounterSources.md).
+- [x] Validate LFR, Normal, Heroic and Mythic resolution, dismissal/retargeting, unknown units and mismatched Journal data with 20 additional regression checks. All 11 suites, Lua 5.1 syntax and manifest checks passed via `.test-venv/Scripts/python.exe spec/run_tests.py` (287 lifecycle/resolver/debug checks). Live confirmation remains pending under Manual Acceptance. Clean-install candidate `dist/Spekifier-nekzali-candidate.zip` was generated and byte-verified against `src/` by the same runner with `--package dist/Spekifier-nekzali-candidate.zip`; all suites passed. The PowerShell packaging script was unavailable under the local execution policy, so the Python runner supplied the package.
+
+### Phase 3 follow-up: Complete Venomous Abyss and Tidebound Grotto (2026-10-09)
+
+- [x] Add verified identities for all eight Venomous Abyss encounters (14 boss units) and Nymrissa Wavecaller in Tidebound Grotto. Document [source declarations and live procedure](spec/Modules/Context/EncounterSources.md#complete-season-2-raid-catalog-follow-up-2026-10-09).
+- [x] Validate all catalog units across Venomous Abyss LFR/Normal/Heroic/Mythic and Grotto World/Normal/Heroic/flexible Mythic; validate dismissal, combat, unsupported units and exact loot-query difficulty. All 11 suites, Lua 5.1 syntax and manifest checks pass (363 lifecycle checks; 48 provider/window checks).
+
+### Phase 3 follow-up: Journal-first raid architecture (2026-10-09)
+
+- [x] Remove the static raid allowlist and hardcoded Journal instance metadata. Discover raid instances and encounters through the Journal before consulting supplemental NPC hints; add exact unique localized encounter/creature name matching and diagnostics. Preserve identity checks and explicit ambiguity/data failures.
+- [x] Add general regression cases for an uncatalogued raid, Journal precedence, individual creature names, missing/mismatched data, unknown targets and ambiguity that NPC hints cannot override. All 11 suites, Lua 5.1 syntax and manifest checks pass (372 lifecycle checks).
+- [x] Update README, [architecture evidence and live procedure](spec/Modules/Context/EncounterSources.md#journal-first-architecture-follow-up-2026-10-09), and AGENTS.md to require root-cause fixes, prohibit symptom suppression, and request user clarification for unclear behavior/scope/tradeoffs.
+
 ## Phase 4: Retrieve loot per specialization
 
 Addresses finding 3: the missing boss-to-loot pipeline.
@@ -441,6 +458,11 @@ Acceptance checks:
 
 Phase 8 automated validation (2026-10-09): all nine Lua 5.1 suites pass, totaling 1,167 unique checks, including 317 new checks in `spec/Modules/Context/AutoShowPreferences.lua`. Lua syntax and the unchanged 14-file manifest order pass. Validation ran with `.test-venv/Scripts/python.exe spec/run_tests.py` and Lupa 2.8 because the system Python had no Lupa or pip; the local environment is ignored. No new runtime files or initialization wiring were needed: the existing options initialization remains sufficient. Difficulty mapping/API evidence, coverage and the full live procedure are in [spec/Modules/Context/AutoShowPreferencesSources.md](spec/Modules/Context/AutoShowPreferencesSources.md). Phase 8 implementation is complete; live acceptance remains pending.
 
+### Phase 8 follow-up: World Raid automation (2026-10-09)
+
+- [x] Add a default-on, persistent World Raid child option for RaidWorld difficulty 250; retain flexible Mythic 233 under Mythic Raid. Add both IDs to loot difficulty diagnostics and update README.
+- [x] Validate upgrade defaults, independent controls, parent/child behavior, false-value persistence, checkbox routing and manual/combat behavior (373 preference checks). Automated coverage passes; live option layout/behavior remains pending below. The full runner with `--package dist/Spekifier-season2-candidate.zip` passed all suites and generated a clean-install archive byte-verified against `src/`.
+
 ## Phase 9: Add selectable window skins and visual polish
 
 Let players choose the window's appearance from the addon options. This phase includes implementing and polishing the actual window skins as well as the settings control.
@@ -529,6 +551,27 @@ Phase 11 packaging follow-up (2026-10-09):
 
 Validation: the Lua entry point was executed with Lupa's Lua 5.1 runtime on Windows and produced archives with exactly the expected names and source bytes. Default/custom destinations, invocation from `spec/`, repeated replacement, spaces/apostrophes/percent/ampersand/exclamation characters, and rejection of output inside `src/` passed. Unix argument quoting was checked with a mocked command executor for both numeric and boolean success returns. All eleven addon suites (1,566 unique checks), Lua syntax and manifest checks still pass. The shell script was reviewed, but Linux execution and shell syntax-tool validation are unavailable: this workspace has no `sh`/`bash`/`zip` or usable WSL installation. No Linux execution is claimed. Existing live acceptance requirements remain unchanged.
 
+## Phase 12: Reported IDE warnings
+
+- [x] Configure Lua Language Server for Lua 5.1 to match the addon/test runtime.
+- [x] Replace heterogeneous category tuples in `spec/Modules/Context/AutoShowPreferences.lua` with named fields, removing `unpack` and preserving numeric difficulty lists for `ipairs`.
+- [x] Give the provider fixture explicit callback/slot-filter override setters instead of repeated function-field declarations; retain reentrant-query and restoration-failure assertions.
+- [x] Document the editor configuration and run the full automated validation.
+
+Validation (2026-10-09): `.test-venv/Scripts/python.exe spec/run_tests.py` passes all eleven suites (1,566 unique checks), Lua 5.1 syntax and manifest validation. Runtime addon files are unchanged. Lua Language Server is unavailable in this workspace, so disappearance of the reported IDE diagnostics has not been directly verified. This phase addresses the supplied examples; it does not claim all IDE warnings have been audited. No new in-game acceptance is needed for these editor/test-only changes; existing manual requirements remain pending.
+
+Phase 12 follow-up (2026-10-09):
+
+- [x] Search all repository Lua code for remaining `unpack` calls and replace all six occurrences in skin presentation, column appearance, shared-label styling, and the skin test with explicit RGBA components.
+- [x] Rerun all eleven suites (1,566 unique checks), Lua 5.1 syntax and manifest validation; confirm no `unpack` references remain in repository Lua files.
+
+These calls all consumed four-component palette/quality arrays. Explicit component arguments preserve their intended color values. This follow-up changes runtime styling code; existing Phase 9 skin and Phase 11 final-candidate live acceptance remain pending. No live validation is claimed.
+
+Phase 12 API mock signature follow-up (2026-10-09):
+
+- [x] Correct the lifecycle fixture's `UnitName` mock to accept the unit argument used by `src/Core/Events.lua:36`, avoiding zero-argument inference from the test definition.
+- [x] Run all eleven suites (1,566 unique checks), Lua 5.1 syntax and manifest validation successfully. IDE diagnostics remain unavailable for direct verification.
+
 ## Manual Acceptance
 
 Run outstanding checks after all implementation phases are complete. As each phase finishes, append its manual checks here under the source phase; split mixed tasks and preserve the full live procedure. Checked items retain the user's recorded 2026-10-08 confirmation for Phases 1-6.5. Unchecked items are deferred, not passed. Phase 8, Phase 9, Phase 10, and Phase 11 checks are recorded below.
@@ -548,6 +591,12 @@ Historical pending-live notes in phase validation paragraphs and supporting docu
 - [x] Verify actual entry and keystone event timing in WoW.
 
 ### Phase 3
+
+- [ ] Run the [Journal-first live procedure](spec/Modules/Context/EncounterSources.md#journal-first-architecture-follow-up-2026-10-09) using `dist/Spekifier-journal-first-candidate.zip`: confirm uncatalogued raid discovery, explicit-instance API behavior, unique encounter/creature matches, hint fallback, correct loot and unchanged Journal selection during resolution. Record client build and evidence.
+
+- [ ] Run the [full Season 2 boss/difficulty procedure](spec/Modules/Context/EncounterSources.md#complete-season-2-raid-catalog-follow-up-2026-10-09) using `dist/Spekifier-season2-candidate.zip`: all eight Venomous Abyss encounters and all individual multi-boss units, plus Tidebound Grotto World/Normal/Heroic/flexible Mythic. Confirm encounter/difficulty/loot/selection, dismissal, combat and unsupported-target rejection; record client/build and tested combinations.
+
+- [ ] Retest Nek'zali in The Venomous Abyss LFR using `dist/Spekifier-nekzali-candidate.zip`: automatic opening, correct boss/difficulty/loot, dismissal/retargeting and combat closing. Follow the [recorded procedure](spec/Modules/Context/EncounterSources.md) and record client build/results. The original failure is confirmed; the fix is not yet live-accepted.
 
 - [x] In WoW, verify supported current/older raid targets, multi-boss identities, unsupported-target rejection, and difficulty/context changes.
 
@@ -604,9 +653,11 @@ Use `/dump GetBuildInfo()` for tested client metadata; obtain the author from th
 
 ### Phase 8: Automatic-opening options
 
+- [ ] Verify the new World Raid control is visible without clipping and independently controls Tidebound Grotto World difficulty; verify upgrade/default/persistence and flexible Mythic control through Mythic Raid using the full Season 2 procedure above.
+
 Follow [the detailed live procedure and record evidence](spec/Modules/Context/AutoShowPreferencesSources.md#manual-procedure-pending). These checks remain deferred until all implementation phases finish.
 
-- [ ] In WoW, verify all existing options entry points reach the shared page, Auto-show and five indented controls render correctly, child disabling retains values, Mythic+ explanation is readable, and minimap visibility is independent across UI scales.
+- [ ] In WoW, verify all existing options entry points reach the shared page, Auto-show and six indented controls render correctly, child disabling retains values, Mythic+ explanation is readable, and minimap visibility is independent across UI scales.
 - [ ] Verify mixed parent/child choices persist through actual reload/login and upgrades preserve existing false values while defaulting missing children on.
 - [ ] Verify parent suppression and independent LFR/Normal/Heroic/Mythic raid prompting, actual/legacy difficulty mapping where supported, immediate automatic closing, unrelated-child independence, dismissal preservation and fail-closed contexts.
 - [ ] Verify ordinary Mythic before a key and active-key entry use Mythic+ gating; enabling unshown visits, combat deferral/cancellation, consumed prompts, keystone transitions, exit/re-entry and Normal/Heroic exclusion retain their lifecycle.
@@ -644,6 +695,6 @@ Follow [the clean-install and live regression procedure](spec/StructureSources.m
 - [ ] Non-Mythic dungeon entry, dungeon targets, outdoor areas, trash, and combat never trigger an automatic popup.
 - [ ] Dismissal, target changes, reloads, and delayed data cannot restore stale or misleading UI.
 - [ ] Unsupported encounters are handled clearly, supported scope is documented, and the integrated workflow has been verified in WoW.
-- [ ] A persistent parent Auto-show option and independent Mythic+, LFR, Normal Raid, Heroic Raid, and Mythic Raid options control automatic opening while preserving manual preview and dismissal behavior.
+- [ ] A persistent parent Auto-show option and independent Mythic+, LFR, Normal Raid, Heroic Raid, Mythic Raid, and World Raid options control automatic opening while preserving manual preview and dismissal behavior.
 - [ ] Players can choose complete Original and Elles window skins from a persistent, extensible options dropdown, with both appearances visually validated and existing interactions preserved.
 

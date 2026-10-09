@@ -29,7 +29,7 @@ local function DifficultyDiagnostics(requested)
     local base = C_EncounterJournal.GetBaseDifficultyID and
         C_EncounterJournal.GetBaseDifficultyID(requested) or requested
     local available = {}
-    for _, id in ipairs({ 1, 2, 8, 14, 15, 16, 17, 23, 24, 33 }) do
+    for _, id in ipairs({ 1, 2, 8, 14, 15, 16, 17, 23, 24, 33, 233, 250 }) do
         if EJ_IsValidInstanceDifficulty(id) then available[#available + 1] = id end
     end
     return { requestedID = requested, baseID = base, availableIDs = available }

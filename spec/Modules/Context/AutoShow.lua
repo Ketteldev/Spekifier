@@ -154,6 +154,7 @@ local function fixture(overrides, saved)
     end
     function issecretvalue(value) return state.secretGUID and value == state.guid end
     C_EncounterJournal = { GetInstanceForGameMap = function(mapID)
+        state.journalLookups = (state.journalLookups or 0) + 1
         if state.noJournal then return nil end
         return state.journalID or (mapID == 2657 and 1273 or 1307)
     end }
@@ -175,7 +176,21 @@ local function fixture(overrides, saved)
             return "Localized Dungeon", id, 1800, nil, 0, maps[id]
         end,
     }
-    function UnitName() return "Tester" end
+    -- Match the game API signature so editor inference accepts unit arguments.
+    function EJ_GetEncounterInfoByIndex(index, journalID)
+        assert(journalID == (state.journalID or (state.instanceID == 2657 and 1273 or 1307)), "explicit Journal instance required")
+        local entry = state.journalEncounters and state.journalEncounters[index]
+        if entry then return entry.name, nil, entry.id end
+    end
+    function EJ_GetCreatureInfo(index, encounterID)
+        for _, entry in ipairs(state.journalEncounters or {}) do
+            if entry.id == encounterID then
+                local name = entry.creatures and entry.creatures[index]
+                if name then return 999000 + index, name end
+            end
+        end
+    end
+    function UnitName(unit) return unit == "target" and (state.targetName or "Unknown target") or "Tester" end
     function GetNumSpecializations() return state.numSpecs or 3 end
     function GetSpecializationInfo(i) return i, "Spec " .. i, nil, i end
     local namespace = {}
@@ -601,6 +616,97 @@ event("PLAYER_REGEN_DISABLED")
 event("PLAYER_REGEN_ENABLED")
 expect(window:IsShown(), "raid wipe reset still works after dungeon dismissal")
 -- Phase 3 acceptance and fail-closed identity checks.
+-- An entirely uncatalogued raid must be discovered without new static entries.
+for _, target in ipairs({"New Boss", "Second Creature"}) do
+    local addon,s = fixture({instanceID=9001,journalID=9002,encounterJournalID=9002,
+        npcID=9003,targetName=target,journalEncounters={{id=9004,name="New Boss",
+        creatures={"First Creature","Second Creature"}}}})
+    local c=addon:GetAutoShowState().resolvedContext
+    expect(addon:GetMainWindow():IsShown() and c and c.encounterID==9004 and
+        c.identitySource=="journal-name" and s.journalLookups>0,
+        "uncatalogued raid resolved from Journal " .. target)
+end
+for _, case in ipairs({
+    { {noJournal=true}, "journal-instance-unavailable" },
+    { {targetName="Trash"}, "unsupported-target" },
+    { {targetName="New Boss",journalEncounters={{id=9004,name="New Boss"},{id=9005,name="New Boss"}}}, "ambiguous-target" },
+    { {targetName="New Boss",encounterMapID=1}, "encounter-data-mismatch" },
+}) do
+    local overrides={instanceID=9001,journalID=9002,encounterJournalID=9002,npcID=9003,
+        targetName="New Boss",journalEncounters={{id=9004,name="New Boss"}}}
+    for k,v in pairs(case[1]) do overrides[k]=v end
+    local addon=fixture(overrides)
+    expect(not addon:GetMainWindow():IsShown() and addon:GetAutoShowState().failureReason==case[2],
+        "Journal discovery rejection " .. case[2])
+end
+local mapped,s=fixture({noJournal=true})
+expect(s.journalLookups>0 and mapped:GetAutoShowState().failureReason=="journal-instance-unavailable",
+    "Journal discovery precedes mapped target lookup")
+local preferred=fixture({targetName="Journal Boss",journalEncounters={{id=8000,name="Journal Boss"}}})
+expect(preferred:GetAutoShowState().resolvedContext.encounterID==8000 and
+    preferred:GetAutoShowState().resolvedContext.identitySource=="journal-name",
+    "Journal identity takes priority over supplemental NPC hints")
+local ambiguous=fixture({targetName="Same",journalEncounters={{id=8000,name="Same"},{id=8001,name="Same"}}})
+expect(ambiguous:GetAutoShowState().failureReason=="ambiguous-target" and
+    not ambiguous:GetMainWindow():IsShown(), "NPC hint cannot suppress Journal ambiguity")
+local tierUnits = {
+    {259927,2888}, {258558,2874}, {258557,2874}, {259181,2882},
+    {261835,2894}, {261843,2894}, {261848,2894}, {261584,2894},
+    {257347,2871}, {257368,2887}, {257361,2887},
+    {259854,2883}, {257911,2883}, {257758,2895},
+}
+for _, unit in ipairs(tierUnits) do
+    for _, difficulty in ipairs({17,14,15,16}) do
+        local addon = fixture({instanceID=3004,npcID=unit[1],journalID=1320,
+            encounterJournalID=1320,difficultyID=difficulty,classification="normal",level=80})
+        local c = addon:GetAutoShowState().resolvedContext
+        expect(addon:GetMainWindow():IsShown() and c and c.encounterID==unit[2] and
+            c.journalInstanceID==1320 and c.difficultyID==difficulty,
+            "Venomous Abyss unit/difficulty " .. unit[1] .. "/" .. difficulty)
+    end
+end
+for _, difficulty in ipairs({250,14,15,233}) do
+    local addon,s,ev = fixture({instanceID=2987,npcID=252959,
+        journalID=1317,encounterJournalID=1317,difficultyID=difficulty})
+    local c = addon:GetAutoShowState().resolvedContext
+    expect(addon:GetMainWindow():IsShown() and c and c.encounterID==2849 and
+        c.journalInstanceID==1317 and c.difficultyID==difficulty,
+        "Tidebound Grotto actual difficulty " .. difficulty)
+    addon:HideWindow("dismissed"); ev("UNIT_HEALTH","target")
+    expect(not addon:GetMainWindow():IsShown(), "Grotto dismissal persists")
+    ev("PLAYER_TARGET_CHANGED")
+    expect(addon:GetMainWindow():IsShown(), "Grotto retarget opens")
+    s.combat=true; ev("PLAYER_REGEN_DISABLED")
+    expect(not addon:GetMainWindow():IsShown(), "Grotto combat closes")
+    s.combat=false; s.npcID=259927; ev("PLAYER_TARGET_CHANGED")
+    expect(not addon:GetMainWindow():IsShown() and
+        addon:GetAutoShowState().failureReason=="unsupported-target", "Grotto rejects other raid NPC")
+end
+for _, difficulty in ipairs({ 17, 14, 15, 16 }) do
+    a, state, event = fixture({ instanceID = 3004, npcID = 259927,
+        journalID = 1320, encounterJournalID = 1320, returnedEncounterID = 2888,
+        difficultyID = difficulty, name = "The Venomous Abyss" })
+    local c = a:GetAutoShowState().resolvedContext
+    expect(a:GetMainWindow():IsShown() and c and c.encounterID == 2888 and
+        c.journalInstanceID == 1320 and c.instanceID == 3004 and
+        c.npcID == 259927 and c.difficultyID == difficulty,
+        "Nek'zali resolves and opens at actual difficulty " .. difficulty)
+    a:HideWindow("dismissed")
+    event("UNIT_HEALTH", "target")
+    expect(not a:GetMainWindow():IsShown(), "Nek'zali dismissal persists")
+    event("PLAYER_TARGET_CHANGED")
+    expect(a:GetMainWindow():IsShown(), "Nek'zali retarget permits prompt")
+    state.npcID = 999
+    event("PLAYER_TARGET_CHANGED")
+    expect(not a:GetMainWindow():IsShown() and
+        a:GetAutoShowState().failureReason == "unsupported-target",
+        "Venomous Abyss unknown units do not resolve as Nek'zali")
+    state.npcID, state.encounterMapID = 259927, 2912
+    event("PLAYER_TARGET_CHANGED")
+    expect(not a:GetMainWindow():IsShown() and
+        a:GetAutoShowState().failureReason == "encounter-data-mismatch",
+        "Nek'zali rejects mismatched Journal identity")
+end
 for _, npc in ipairs({ 240435, 240434, 250892, 254109, 240432,
     250589, 250588, 250587, 244761 }) do
     a = fixture({ npcID = npc, level = 80, classification = "normal" })
@@ -615,13 +721,13 @@ for _, npc in ipairs({ 217489, 217491 }) do
         a:GetMainWindow():IsShown(), "older multi-boss unit resolves without skull " .. npc)
 end
 for _, case in ipairs({
-    { { instanceID = 999 }, "unsupported-raid" },
+    { { instanceID = 999 }, "unsupported-target" },
     { { npcID = 999 }, "unsupported-target" },
     { { noGUID = true }, "target-identity-unavailable" },
     { { guid = "Player-1-1" }, "unsupported-target-type" },
     { { guid = "Creature-malformed" }, "unsupported-target-type" },
     { { secretGUID = true, guid = "secret" }, "restricted-target-identity" },
-    { { journalID = 999 }, "journal-instance-mismatch" },
+    { { journalID = 999 }, "encounter-data-mismatch" },
     { { noJournal = true }, "journal-instance-unavailable" },
     { { noEncounter = true }, "encounter-data-mismatch" },
     { { returnedEncounterID = 999 }, "encounter-data-mismatch" },

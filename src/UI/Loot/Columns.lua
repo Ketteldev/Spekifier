@@ -16,8 +16,10 @@ function Spekifier:RefreshColumnAppearance(column)
         selected and 0.18 or 0.08, 0.85)
     if self.GetWindowPalette then
         local p = self:GetWindowPalette()
-        column.frame.bg:SetColorTexture(unpack(selected and p.selected or (enabled and p.bg or p.disabled)))
-        column.hover:SetColorTexture(unpack(p.accent))
+        local background = selected and p.selected or (enabled and p.bg or p.disabled)
+        local accent = p.accent
+        column.frame.bg:SetColorTexture(background[1], background[2], background[3], background[4])
+        column.hover:SetColorTexture(accent[1], accent[2], accent[3], accent[4])
     end
     column.hover:SetAlpha(hovered and 0.18 or 0)
     column.marker:SetText(selected and "Selected" or (enabled and "Click to select" or "Selection unavailable"))

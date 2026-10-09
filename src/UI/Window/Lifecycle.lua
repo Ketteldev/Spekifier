@@ -5,7 +5,10 @@ local mainWindow
 local windowState = { selectionAllowed = false }
 local resolutionMessages = {
     ["challenge-data-unavailable"] = "Mythic+ dungeon data is still loading. Try again shortly.",
-    ["unsupported-raid"] = "This raid is not supported.",
+    ["journal-instance-unavailable"] = "The Journal has no instance data available for this raid yet.",
+    ["journal-discovery-api-unavailable"] = "Journal target discovery is unavailable.",
+    ["journal-discovery-incomplete"] = "Journal encounter data is incomplete. Try again shortly.",
+    ["ambiguous-target"] = "This target matches multiple Journal encounters.",
     ["unsupported-target"] = "This target is not a supported raid boss.",
     ["unsupported-dungeon"] = "This dungeon has no supported Mythic+ reward source.",
     ["ambiguous-dungeon"] = "This dungeon's Mythic+ reward source is ambiguous.",

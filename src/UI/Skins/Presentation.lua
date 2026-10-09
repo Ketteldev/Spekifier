@@ -1,10 +1,13 @@
 -- Idempotent styling of existing controls.
 local _, ns = ...
 local S = ns.Spekifier
-local function color(texture, value) texture:SetColorTexture(unpack(value)) end
+local function color(texture, value) texture:SetColorTexture(value[1], value[2], value[3], value[4]) end
 local function text(font, palette, size, quality)
     font:SetFont(palette.font, size, "")
-    if not quality then font:SetTextColor(unpack(palette.text)) end
+    if not quality then
+        local value = palette.text
+        font:SetTextColor(value[1], value[2], value[3], value[4])
+    end
 end
 -- Owned overlays are reused. Template regions are restored on every switch.
 local function surface(frame, palette)

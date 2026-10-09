@@ -178,6 +178,17 @@ for i=1,8 do state:Tick() end
 expect(debugContains("count incomplete [failed: loot-data-timeout]") and
     debugContains("Missing data: rows=0, names=0, icons=0, links=1"),
     "real missing-link timeout retains useful diagnostics")
+for _, case in ipairs({
+    {3004,1320,259181,2882,17}, {3004,1320,261584,2894,15},
+    {2987,1317,252959,2849,250}, {2987,1317,252959,2849,233},
+}) do
+    local addon,s,ev,journal=setup({instanceID=case[1],journalID=case[2],
+        encounterJournalID=case[2],npcID=case[3],difficultyID=case[5]})
+    local data=addon:GetMainWindow().encounterData
+    expect(data and data.state=="ready" and data.context.encounterID==case[4] and
+        data.context.difficultyID==case[5] and data.specs[1].journalDifficultyID==case[5],
+        "tier loot uses resolved encounter and exact difficulty " .. case[4] .. "/" .. case[5])
+end
 originalPrint("Passed "..checks.." provider/window integration checks")
 
 

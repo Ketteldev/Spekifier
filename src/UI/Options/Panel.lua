@@ -17,7 +17,7 @@ end
 local autoShowOptions = {
     { "autoShowMythicPlus", "Mythic+" }, { "autoShowLFR", "LFR" },
     { "autoShowNormalRaid", "Normal Raid" }, { "autoShowHeroicRaid", "Heroic Raid" },
-    { "autoShowMythicRaid", "Mythic Raid" },
+    { "autoShowMythicRaid", "Mythic Raid" }, { "autoShowWorldRaid", "World Raid" },
 }
 
 function Spekifier:RefreshAutoShowOptions()

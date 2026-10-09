@@ -40,10 +40,46 @@ function Spekifier:ResolveDungeonContext(visit)
             kind = "challenge-mode-end-of-run", challengeModeID = match,
         } }
 end
+-- Explicit instance/encounter arguments avoid changing the shared Journal selection.
+-- Journal creature IDs are never compared to NPC IDs from UnitGUID.
+local function FindJournalEncounter(journalID, instanceID, targetName)
+    if not EJ_GetEncounterInfoByIndex or not EJ_GetCreatureInfo then
+        return nil, "journal-discovery-api-unavailable"
+    end
+    if issecretvalue and issecretvalue(targetName) then return nil, "restricted-target-identity" end
+    if type(targetName) ~= "string" or targetName == "" then return nil, "target-name-unavailable" end
+    local match
+    for index = 1, 100 do
+        local name, _, encounterID = EJ_GetEncounterInfoByIndex(index, journalID)
+        if not encounterID then
+            if match then return match end
+            return nil, "unsupported-target"
+        end
+        local _, _, returnedID, _, _, returnedInstance, _, gameMap = EJ_GetEncounterInfo(encounterID)
+        if returnedID ~= encounterID or returnedInstance ~= journalID or gameMap ~= instanceID then
+            return nil, "encounter-data-mismatch"
+        end
+        local matches = name == targetName
+        for creatureIndex = 1, 100 do
+            local creatureID, creatureName = EJ_GetCreatureInfo(creatureIndex, encounterID)
+            if not creatureID then break end
+            if creatureName == targetName then matches = true end
+            if creatureIndex == 100 then return nil, "journal-discovery-incomplete" end
+        end
+        if matches then
+            if match and match ~= encounterID then return nil, "ambiguous-target" end
+            match = encounterID
+        end
+    end
+    return nil, "journal-discovery-incomplete"
+end
+
 function Spekifier:ResolveRaidContext(instanceID, difficultyID)
     if InCombatLockdown() then return nil, "combat" end
+    -- Discover the instance from live Journal data before consulting NPC hints.
+    local journalID, reason = JournalInstance(instanceID)
+    if not journalID then return nil, reason end
     local raid = raids[instanceID]
-    if not raid then return nil, "unsupported-raid" end
     if type(difficultyID) ~= "number" or difficultyID <= 0 then
         return nil, "difficulty-unavailable"
     end
@@ -55,12 +91,19 @@ function Spekifier:ResolveRaidContext(instanceID, difficultyID)
     local unitType, npcID = guid:match("^(%a+)%-%d+%-%d+%-%d+%-%d+%-(%d+)%-.+$")
     if unitType ~= "Creature" then return nil, "unsupported-target-type" end
     npcID = tonumber(npcID)
-    local encounterID = raid.encounters[npcID]
-    if not encounterID then return nil, "unsupported-target" end
-    local journalID, reason = JournalInstance(instanceID)
-    if not journalID then return nil, reason end
-    if journalID ~= raid.journalInstanceID then return nil, "journal-instance-mismatch" end
     if not EJ_GetEncounterInfo then return nil, "encounter-api-unavailable" end
+    local encounterID
+    local identitySource = "journal-name"
+    local targetName = UnitName and UnitName("target")
+    encounterID, reason = FindJournalEncounter(journalID, instanceID, targetName)
+    -- Only supplemental verified NPC hints may bridge absent Journal names/APIs.
+    -- Never override ambiguous or inconsistent Journal data.
+    if not encounterID and (reason == "unsupported-target" or
+        reason == "journal-discovery-api-unavailable" or reason == "target-name-unavailable") then
+        encounterID = raid and raid.encounters[npcID]
+        if encounterID then identitySource = "npc-mapping" end
+    end
+    if not encounterID then return nil, reason end
     local bossName, _, returnedID, _, _, encounterInstanceID, _, gameMapID =
         EJ_GetEncounterInfo(encounterID)
     if not bossName or returnedID ~= encounterID or encounterInstanceID ~= journalID or
@@ -68,5 +111,5 @@ function Spekifier:ResolveRaidContext(instanceID, difficultyID)
     return { kind = "raid", instanceID = instanceID,
         journalInstanceID = journalID, encounterID = encounterID,
         bossName = bossName, difficultyID = difficultyID,
-        targetIdentity = guid, npcID = npcID, lootMode = "raid" }
+        targetIdentity = guid, npcID = npcID, identitySource = identitySource, lootMode = "raid" }
 end

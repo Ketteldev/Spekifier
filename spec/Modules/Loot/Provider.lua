@@ -17,6 +17,9 @@ local function fixture()
     local s = { instance=999, encounter=888, difficulty=16, classID=2, specID=65,
         slot=10, search="sword", combat=false, queries=0, mutations=0, timers={},
         hooks={}, shown=false, stale=false, requests=0, season=1, deliveries={}, expectedClass=1 }
+    -- Explicit injection points let each case customize a fresh fixture.
+    function s:SetQueryCallback(callback) self.onQuery = callback end
+    function s:SetSlotFilterOverride(callback) self.slotFilterOverride = callback end
     function s:Tick()
         local timers=self.timers; self.timers={}
         for _, fn in ipairs(timers) do fn() end
@@ -58,7 +61,10 @@ local function fixture()
     C_EncounterJournal={
         GetSlotFilter=function() return s.slot end,
         ResetSlotFilter=function() mutate(); s.slot=15 end,
-        SetSlotFilter=function(slot) mutate(); s.slot=slot end,
+        SetSlotFilter=function(slot)
+            if s.slotFilterOverride then return s.slotFilterOverride(slot) end
+            mutate(); s.slot=slot
+        end,
         GetLootInfoByIndex=function(index)
             if s.missingRow then return nil end
             local itemID=s.specID*10 + (index==3 and 1 or index)
@@ -209,7 +215,7 @@ s:Restored()
 p,s=fixture(); s.combat=true; s:Request()
 expect(s.result.state=="loading" and s.mutations==0,"combat does not mutate shared Journal")
 s.combat=false; s:Tick(); expect(s.result.state=="ready","query resumes outside combat")
-p,s=fixture(); s.onQuery=function() p:OnEvent("EJ_LOOT_DATA_RECIEVED",1001) end
+p,s=fixture(); s:SetQueryCallback(function() p:OnEvent("EJ_LOOT_DATA_RECIEVED",1001) end)
 s:Request()
 expect(s.result.state=="ready" and s.queries==2 and #s.timers==0,"self-generated events do not overlap queries")
 p,s=fixture(); s:Request(); count=s.queries
@@ -248,12 +254,12 @@ p,s=fixture()
 for i=1,70 do s:Request(raid(3000+i),{100}) end
 expect(#p.cacheOrder==64,"memory cache has bounded capacity")
 p,s=fixture()
-C_EncounterJournal.SetSlotFilter=function() error("restore exception") end
+s:SetSlotFilterOverride(function() error("restore exception") end)
 s:Request(raid(),{100})
 expect(s.result.state=="failed" and s.result.reason=="journal-restore-failed" and
     s.difficulty==16 and s.classID==2 and s.specID==65,"restore exceptions retain failure and restore other fields")
 p,s=fixture()
-C_EncounterJournal.SetSlotFilter=function() end
+s:SetSlotFilterOverride(function() end)
 s:Request(raid(),{100})
 expect(s.result.reason=="journal-restore-failed","silent restore coercion is detected")
 p,s=fixture(); s.missingLink=true; s:Request(raid(),{100})
@@ -265,9 +271,9 @@ for i=1,100 do p:OnEvent("EJ_LOOT_DATA_RECIEVED",1001); s:Tick() end
 expect(s.queries==count and count==12,"late Journal recovery is also bounded")
 p,s=fixture()
 local replaced=false
-s.onQuery=function()
+s:SetQueryCallback(function()
     if not replaced then replaced=true; s:Request(raid(2734),{100}) end
-end
+end)
 s:Request(raid(),{100}); s:Tick()
 expect(s.result.context.encounterID==2734 and s.result.state=="ready",
     "reentrant replacement waits for transaction and still completes")

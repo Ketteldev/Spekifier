@@ -43,8 +43,12 @@ Manual previews work with automatic opening disabled. Outside a supported encoun
 
 ## Supported content
 
+Raid discovery uses the live Encounter Journal, including raids absent from the supplemental NPC catalog. A living attackable target must uniquely match a localized Journal encounter or creature name, or have a verified NPC hint. Ambiguous matches and inconsistent Journal identities leave comparison unavailable. The entries below have supplemental NPC coverage; other Journal raids can resolve dynamically.
+
 | Content | Preview |
 | --- | --- |
+| **The Venomous Abyss** | All eight encounters, including individual units in multi-boss fights, at the current raid difficulty (including LFR). |
+| **The Tidebound Grotto** | Nymrissa Wavecaller at World, Normal, Heroic, or flexible Mythic difficulty. |
 | **The Voidspire** | All six encounters, using the current raid difficulty. |
 | **Nerub'ar Palace** | The Silken Court, using the current raid difficulty. |
 | **Supported Mythic / Mythic+ dungeons** | Dungeon-wide Mythic+ end-of-run loot comparison, available before a key starts. |
@@ -57,7 +61,7 @@ The dungeon preview is labeled **Mythic+**, including when entering an ordinary 
 
 Open **Escape → Options → Addons → Spekifier**, click the window's **Options** gear, right-click the minimap button, or type `/spek options`.
 
-- **Auto-show:** enable or disable automatic previews. Its five choices—**Mythic+**, **LFR**, **Normal Raid**, **Heroic Raid**, and **Mythic Raid**—control prompts independently and default to on. Mythic+ includes ordinary Mythic entry before a key starts. Turning off Auto-show preserves these choices and keeps manual previews available.
+- **Auto-show:** enable or disable automatic previews. Its six choices—**Mythic+**, **LFR**, **Normal Raid**, **Heroic Raid**, **Mythic Raid**, and **World Raid**—control prompts independently and default to on. Mythic+ includes ordinary Mythic entry before a key starts. World Raid controls World difficulty in supported lairs; flexible Mythic uses Mythic Raid. Turning off Auto-show preserves these choices and keeps manual previews available.
 - **Hide minimap button:** hide or restore the launcher. Drag the button around the minimap to reposition it.
 - **Window skin:** choose **Original** for Blizzard-style framing and gold accents, or **Elles** for dark panels, subtle borders, and cyan accents. Both skins are built in.
 
@@ -92,7 +96,7 @@ When reporting a problem, include your WoW version/build, encounter or dungeon, 
 
 ### Data and lifecycle
 
-Spekifier resolves supported raid targets through NPC and Journal identities. Dungeon resolution requires a unique challenge-map match and Journal instance. Unsupported, ambiguous, or unavailable identities leave comparison unavailable.
+Spekifier discovers raid instances and encounters from the Journal first, then uses supplemental NPC hints when a unique Journal name match is unavailable. Dungeon resolution requires a unique challenge-map match and Journal instance. Unsupported, ambiguous, or unavailable identities leave comparison unavailable.
 
 Raid queries use the resolved encounter and actual raid difficulty. Dungeon queries combine the full dungeon's boss loot at Journal Mythic difficulty 23, excluding per-player bonus drops and deduplicating items. Queries preserve observable Adventure Guide selections and filters, defer while the Guide is open, cancel stale requests, and cache completed pools in memory. The shared row is derived only after every specialization's pool is complete; it does not alter provider data or diagnostic counts.
 
@@ -134,6 +138,8 @@ To register another built-in skin, call `Spekifier:RegisterWindowSkin("stable-id
 The [Phase 10 refactor record](spec/StructureSources.md) maps previous filenames to their new owners; earlier phase records retain historical paths.
 
 ### Validation and packaging
+
+The root `.luarc.json` configures Lua Language Server for Lua 5.1, matching the addon and test runtime. Reload the language server after changing its configuration.
 
 From the repository root, with Python and `lupa` installed:
 

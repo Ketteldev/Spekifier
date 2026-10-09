@@ -107,7 +107,8 @@ function Spekifier:RenderSharedLoot(items)
     strip:SetOffset(strip.offset)
     if self.StyleScrollbar then
         self:StyleScrollbar(strip.bar)
-        strip.label:SetTextColor(unpack(self:GetWindowPalette().text))
+        local textColor = self:GetWindowPalette().text
+        strip.label:SetTextColor(textColor[1], textColor[2], textColor[3], textColor[4])
     end
     strip.frame:SetShown(#items > 0)
     -- Retain the full column viewport, reclaiming all strip space when absent.

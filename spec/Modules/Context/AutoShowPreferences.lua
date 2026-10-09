@@ -2,14 +2,15 @@ local fixture = dofile("spec/Modules/Context/AutoShow.lua")
 local checks = 0
 local function expect(value, label) assert(value, label); checks = checks + 1 end
 local categories = {
-    { "autoShowMythicPlus", "party", {8, 23} },
-    { "autoShowLFR", "raid", {7, 17} },
-    { "autoShowNormalRaid", "raid", {3, 4, 9, 14} },
-    { "autoShowHeroicRaid", "raid", {5, 6, 15} },
-    { "autoShowMythicRaid", "raid", {16, 233} },
+    { key = "autoShowMythicPlus", kind = "party", ids = {8, 23} },
+    { key = "autoShowLFR", kind = "raid", ids = {7, 17} },
+    { key = "autoShowNormalRaid", kind = "raid", ids = {3, 4, 9, 14} },
+    { key = "autoShowHeroicRaid", kind = "raid", ids = {5, 6, 15} },
+    { key = "autoShowMythicRaid", kind = "raid", ids = {16, 233} },
+    { key = "autoShowWorldRaid", kind = "raid", ids = {250} },
 }
 for _, category in ipairs(categories) do
-    local key, kind, ids = unpack(category)
+    local key, kind, ids = category.key, category.kind, category.ids
     for _, id in ipairs(ids) do
         local a, s, event = fixture({discovery = true, instanceType = kind, difficultyID = id})
         local w = a:GetMainWindow()
@@ -21,13 +22,13 @@ for _, category in ipairs(categories) do
         a:SetAutoShowPreference("enabled", false)
         expect(not w:IsShown(), "parent closes " .. id)
         for _, other in ipairs(categories) do
-            expect(not a.optionsPanel.autoShowChildren[other[1]]:IsEnabled(), "children disabled")
+            expect(not a.optionsPanel.autoShowChildren[other.key]:IsEnabled(), "children disabled")
         end
         a:SetAutoShowPreference(key, false)
         a:SetAutoShowPreference("enabled", true)
         expect(not w:IsShown() and not a:GetSetting(key), "parent retains child false")
         for _, other in ipairs(categories) do
-            expect(a.optionsPanel.autoShowChildren[other[1]]:IsEnabled(), "children enabled")
+            expect(a.optionsPanel.autoShowChildren[other.key]:IsEnabled(), "children enabled")
         end
         SlashCmdList.SPEKIFIER("toggle")
         expect(w:IsShown() and a:GetWindowState().openingReason == "manual", "manual ignores preferences")
@@ -39,12 +40,12 @@ for _, category in ipairs(categories) do
         expect(not w:IsShown(), "manual combat blocked")
     end
 end
-for _, id in ipairs({0, 1, 2, 33, 220, 250, 999}) do
+for _, id in ipairs({0, 1, 2, 33, 220, 999}) do
     local a = fixture({discovery = true, difficultyID = id})
     expect(not a:GetMainWindow():IsShown() and not a:GetAutoShowState().autoShowPermission, "unmapped raid closed " .. id)
 end
 for _, category in ipairs(categories) do
-    local key, kind, ids = unpack(category)
+    local key, kind, ids = category.key, category.kind, category.ids
     local saved = {settings = {[key] = false}}
     local a, s, event = fixture({discovery = true, instanceType = kind, difficultyID = ids[1]}, saved)
     expect(not a:GetMainWindow():IsShown(), "saved false gates")
@@ -68,24 +69,24 @@ for _, category in ipairs(categories) do
     for _, parent in ipairs({false, true}) do
         for _, child in ipairs({false, true}) do
             local settings = {enabled = parent}
-            for _, other in ipairs(categories) do settings[other[1]] = false end
-            settings[category[1]] = child
-            local a = fixture({discovery=true, instanceType=category[2], difficultyID=category[3][1]}, {settings=settings})
+            for _, other in ipairs(categories) do settings[other.key] = false end
+            settings[category.key] = child
+            local a = fixture({discovery=true, instanceType=category.kind, difficultyID=category.ids[1]}, {settings=settings})
             expect(a:GetMainWindow():IsShown() == (parent and child), "independent category truth table")
         end
     end
 end
 local saved = {settings = {enabled = false, hideMinimapButton = true, unrelated = "keep"}}
-for i, category in ipairs(categories) do saved.settings[category[1]] = i % 2 == 0 end
+for i, category in ipairs(categories) do saved.settings[category.key] = i % 2 == 0 end
 local a = fixture({discovery = true}, saved)
 a:SetAutoShowPreference("enabled", true); a:SetAutoShowPreference("enabled", false)
 a = fixture({discovery = true}, SpekifierDB)
 expect(not a:GetSetting("enabled") and a:GetSetting("hideMinimapButton") and a:GetSetting("unrelated") == "keep", "login retains independent preferences")
 for i, category in ipairs(categories) do
-    expect(a:GetSetting(category[1]) == (i % 2 == 0) and a.optionsPanel.autoShowChildren[category[1]]:GetChecked() == (i % 2 == 0), "mixed choices persist")
+    expect(a:GetSetting(category.key) == (i % 2 == 0) and a.optionsPanel.autoShowChildren[category.key]:GetChecked() == (i % 2 == 0), "mixed choices persist")
 end
 a = fixture({discovery = true}, {settings = {enabled = false}})
-for _, category in ipairs(categories) do expect(a:GetSetting(category[1]) == true, "upgrade defaults on") end
+for _, category in ipairs(categories) do expect(a:GetSetting(category.key) == true, "upgrade defaults on") end
 for _, id in ipairs({8, 23}) do
     local a, s, event = fixture({discovery = true, instanceType = "party", difficultyID = id, combat = true}, {settings = {autoShowMythicPlus = false}})
     a:SetAutoShowPreference("autoShowMythicPlus", true)

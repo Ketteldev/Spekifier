@@ -61,7 +61,7 @@ a:ApplyWindowSkin(); a:ApplyWindowSkin()
 expect(#frames == stable and w.bindings == bindings and w.registrations == registrations, "idempotent frames and handlers")
 local row = c.rows[1]
 local quality = { .65, .2, .9, 1 }
-row.name:SetTextColor(unpack(quality))
+row.name:SetTextColor(quality[1], quality[2], quality[3], quality[4])
 a:SetWindowSkin("elles")
 expect(row.name.textColor[1] == quality[1] and row.name.textColor[3] == quality[3], "switch preserves item quality text color")
 expect(row.skinBackground.color[1] == a:GetWindowPalette().bg[1] and row.name.fontSize == 18, "existing row styled")

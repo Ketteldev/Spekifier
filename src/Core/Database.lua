@@ -6,7 +6,7 @@ function Spekifier:InitializeDatabase()
     if type(SpekifierDB) ~= "table" then SpekifierDB = {} end
     if type(SpekifierDB.settings) ~= "table" then SpekifierDB.settings = {} end
     local defaults = { autoShowMythicPlus = true, autoShowLFR = true, autoShowNormalRaid = true,
-        autoShowHeroicRaid = true, autoShowMythicRaid = true, enabled = true, debugEnabled = false, hideMinimapButton = false, minimapAngle = 225 }
+        autoShowWorldRaid = true, autoShowHeroicRaid = true, autoShowMythicRaid = true, enabled = true, debugEnabled = false, hideMinimapButton = false, minimapAngle = 225 }
     for key, value in pairs(defaults) do
         if SpekifierDB.settings[key] == nil then SpekifierDB.settings[key] = value end
     end
