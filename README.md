@@ -1,4 +1,4 @@
-﻿# Spekifier
+# Spekifier
 
 **Compare loot across your specializations and choose your loot spec before the fight.**
 
@@ -16,7 +16,7 @@ The aim is simple: make it easier to choose which spec to collect gear for befor
 
 ## Installation
 
-1. Place the `Spekifier` folder in your Retail installation's `Interface/AddOns` directory:
+1. Extract a release ZIP and place its `Spekifier` folder in your Retail installation's `Interface/AddOns` directory:
 
    ```text
    World of Warcraft/_retail_/Interface/AddOns/Spekifier/
@@ -24,6 +24,8 @@ The aim is simple: make it easier to choose which spec to collect gear for befor
 
 2. Check that `Spekifier.toc` is directly inside that folder, rather than inside another nested folder.
 3. Start or restart WoW and enable **Spekifier** in the character-selection AddOns list.
+
+When installing from a source checkout, copy the **contents of `src/`** into `AddOns/Spekifier/`. The repository root is not the installable addon.
 
 Spekifier is designed for **Retail WoW**. Neither ElvUI nor EllesmereUI is required.
 
@@ -96,35 +98,86 @@ Raid queries use the resolved encounter and actual raid difficulty. Dungeon quer
 
 Loot selection rechecks context and combat state at click time. The game-confirmed loot specialization drives the selected marker, including external changes through Blizzard's menu. Spekifier does not save or restore a loot specialization. Preferences are stored in `SpekifierDB`; window visibility is reevaluated on login/reload.
 
-### Source layout
+### Source layout and ownership
+
+The installable addon lives in `src/`; manifest entries remain relative to that folder. Tests and their API/acceptance records live in `spec/`, grouped by the source modules they cover. Shared fixtures remain in their existing suites; cross-module tests stay at the spec root.
+
+WoW loads Lua files in the order listed in `src/Spekifier.toc`. Each file receives the addon name and the same private namespace through `...`; `src/Core/Init.lua` creates the shared `Spekifier` object. Files attach methods and private helpers during loading. `src/Core/Events.lua` initializes saved preferences on `ADDON_LOADED`, then creates the UI and starts context tracking on `PLAYER_LOGIN`. There is no separate entry-point script, runtime `require`, or third-party framework.
 
 | Path | Responsibility |
 | --- | --- |
-| `Core/` | Initialization, saved settings, diagnostics, and event handling. |
-| `Modules/` | Encounter resolution, loot queries, confirmed selection, automatic opening, and commands. |
-| `UI/` | Window, specialization columns, skins, settings, and minimap launcher. |
-| `Spekifier.toc` | Addon metadata and runtime dependency order. |
-| `Spekifier.lua` | Final entry point. |
-| `Tests/` | Mocked Lua suites, API evidence, and live acceptance procedures. |
+| `src/Core/` | Addon object, saved preferences and migration, logging, and startup events. |
+| `src/Modules/Context/RaidCatalog.lua` | Supported raid NPC-to-Journal identities, separated from lookup logic. |
+| `src/Modules/Context/Resolver.lua` | Validated raid and dungeon identities; unsupported or ambiguous matches fail closed. |
+| `src/Modules/Context/AutoShow.lua` | Raid targeting, dungeon visits, combat, preferences, and prompt eligibility. |
+| `src/Modules/Loot/Model.lua` | Request validation, cache keys, defensive copies, and item metadata hydration. |
+| `src/Modules/Loot/Provider.lua` | Request tokens, cache ownership, result publication, and bounded retries. |
+| `src/Modules/Loot/Journal.lua` | Journal selection tracking and query transactions, including restoration after failures. |
+| `src/Modules/Loot/Events.lua` | Item/Journal event coalescing and recovery after delayed data arrives. |
+| `src/Modules/Loot/Selection.lua` | Click-time validation, game-confirmed loot specialization, and selection feedback. |
+| `src/Modules/Loot/RequestIdentity.lua`, `Diagnostics.lua` | Shared request identity and diagnostic queries while the window is dismissed. |
+| `src/Modules/Commands.lua` | Slash commands and diagnostic output. |
+| `src/UI/Window/` | Frame construction and visibility (`Lifecycle`), provider subscription (`LootBinding`), saved dimensions and geometry (`Layout`), and screen fitting (`Fit`). |
+| `src/UI/Loot/` | Spec columns, pooled item rows, shared-item strip, native tooltips, display-list derivation, and result rendering in separate files. |
+| `src/UI/Skins/` | Skin registration and defaults (`Registry`), built-in colors (`Palettes`), and idempotent control styling (`Presentation`). |
+| `src/UI/Options/` | Shared settings page and skin dropdown. |
+| `src/UI/Minimap.lua` | Minimap launcher, positioning, and visibility. |
+| `spec/` | Mirrors source ownership under `Modules/` and `UI/`, with integration/manifest suites at its root. Lua fixtures and regression suites, manifest startup integration, API evidence, and live acceptance procedures. |
+| `src/Spekifier.toc` | Metadata and the explicit dependency order for all 31 runtime files. |
 
-To register another built-in skin, call `Spekifier:RegisterWindowSkin("stable-id", "Display label", palette)` from a runtime file loaded after `UI/Skins.lua` and before `PLAYER_LOGIN`. Supply `bg`, `border`, `accent`, `selected`, `disabled`, and `text` as RGBA arrays, plus a client-compatible `font` path. Use the existing palettes as examples and register the new file in the manifest. The dropdown discovers registered skins automatically; saved preferences use their stable IDs. Unknown saved skin IDs fall back to Original.
+Dependencies flow from context resolution to loot requests to presentation. The provider owns request/cache state; the window owns its subscription token and rejects obsolete deliveries. Visibility and dismissal remain session-only state. Display-list derivation reads complete provider pools without mutating them. Skins only style controls; resizing belongs to window layout. Shared helpers live in the addon-private namespace (`Loot`, `LootUI`, and `PlayerLootRequest`) rather than adding global functions. The existing global `Spekifier` object remains available for diagnostics.
+
+Keep single-file helpers local. When a helper must cross files, expose it through the private namespace and load its defining file before consumers. Method bodies may call methods defined later in the manifest because startup runs after all files load. Use Lua 5.1-compatible syntax and the WoW API environment; these files are not standalone Lua programs. Register every new runtime file in the manifest and update the runner's load-order contract.
+
+To register another built-in skin, call `Spekifier:RegisterWindowSkin("stable-id", "Display label", palette)` from a runtime file loaded after `src/UI/Skins/Palettes.lua` and before `PLAYER_LOGIN`. Supply `bg`, `border`, `accent`, `selected`, `disabled`, and `text` as RGBA arrays, plus a client-compatible `font` path. Use `Palettes.lua` as the example and add the file to the manifest. The dropdown discovers registered skins automatically; saved preferences use their stable IDs. Unknown saved IDs fall back to Original.
+
+The [Phase 10 refactor record](spec/StructureSources.md) maps previous filenames to their new owners; earlier phase records retain historical paths.
 
 ### Validation and packaging
 
 From the repository root, with Python and `lupa` installed:
 
 ```sh
-python Tests/run_tests.py
+python spec/run_tests.py
 ```
 
-The runner executes all ten mocked Lua 5.1 suites, compiles Lua sources, and validates the manifest's runtime files and load order. To validate and build a clean-install candidate:
+The runner executes all eleven mocked Lua 5.1 suites, compiles Lua sources, and validates the manifest's runtime files and load order. To validate and build a clean-install candidate:
 
 ```sh
-python Tests/run_tests.py --package Spekifier-candidate.zip
+python spec/run_tests.py --package dist/Spekifier-candidate.zip
 ```
 
-The archive contains a single `Spekifier` folder with runtime files and documentation, excluding development scripts and saved variables.
+On Windows, use `py` instead of `python`, or the repository-local `.test-venv/Scripts/python.exe` when that environment is available.
 
-Implementation is complete through Phase 9. Recorded live acceptance covers Phases 1–6.5; final integration, Phase 8/9 live checks, and release metadata finalization remain tracked in [PLAN.md](PLAN.md#manual-acceptance). Automated checks and the manifest's interface declaration do not establish live client compatibility.
+For packaging alone, PowerShell 5.1 or later can build the ZIP without Python or Lupa, from any working directory:
 
-Detailed evidence and procedures: [encounter support](Tests/EncounterSources.md), [loot data](Tests/LootSources.md), [window and shared loot](Tests/WindowSources.md), [selection](Tests/SelectionSources.md), [options and minimap](Tests/OptionsSources.md), [automatic-opening preferences](Tests/AutoShowPreferencesSources.md), [skins and resizing](Tests/SkinsSources.md), and [integration and release acceptance](Tests/IntegrationSources.md).
+```powershell
+./scripts/package.ps1
+./scripts/package.ps1 -OutputPath ./dist/Spekifier-custom.zip
+```
+
+On Windows hosts that disable script execution, invoke `powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/package.ps1` to allow this invocation without changing the saved execution policy.
+
+Linux developers can use the shell packager with standard coreutils and the `zip` and `unzip` commands installed:
+
+```sh
+sh scripts/package.sh
+sh scripts/package.sh ./dist/Spekifier-custom.zip
+```
+
+Lua developers can use Lua 5.1 or later:
+
+```sh
+lua scripts/package.lua
+lua scripts/package.lua ./dist/Spekifier-custom.zip
+```
+
+Lua's standard library has no ZIP API. This entry point delegates compression to `package.ps1` on Windows (PowerShell 5.1+) or `package.sh` on Linux (`sh`, coreutils, `zip`, and `unzip`). No additional Lua modules or Python are required. Keep the platform scripts alongside the Lua script. Invoke the scripts by path; they locate `src/` relative to themselves, including when launched from another directory.
+
+The default output is `dist/Spekifier.zip` under the repository; explicit relative output paths are relative to the caller's working directory. Existing output files are replaced. Run the test runner before publishing.
+
+All packaging routes put only the contents of `src/` inside a single `Spekifier/` folder, with `Spekifier.toc` directly inside it. Documentation, tests, and development tooling stay in the repository. New runtime assets should live in `src/` to be included automatically. The manifest suite loads every runtime file in release order and exercises startup, loot delivery, skin switching, hidden diagnostics, reopening, and selection.
+
+Implementation is complete through Phase 11. Recorded live acceptance covers Phases 1–6.5; final integration, Phase 8/9/10/11 live checks, and release metadata finalization remain tracked in [PLAN.md](PLAN.md#manual-acceptance). Automated checks and the manifest's interface declaration do not establish live client compatibility.
+
+Detailed evidence and procedures: [encounter support](spec/Modules/Context/EncounterSources.md), [loot data](spec/Modules/Loot/LootSources.md), [window and shared loot](spec/UI/Window/WindowSources.md), [selection](spec/Modules/Loot/SelectionSources.md), [options and minimap](spec/UI/Options/OptionsSources.md), [automatic-opening preferences](spec/Modules/Context/AutoShowPreferencesSources.md), [skins and resizing](spec/UI/Skins/SkinsSources.md), and [integration and release acceptance](spec/IntegrationSources.md).

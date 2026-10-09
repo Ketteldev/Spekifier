@@ -1,0 +1,39 @@
+## Interface: 120100
+## Title: Spekifier
+## Notes: A World of Warcraft add-on
+## Author: YourName
+## Version: 1.0.0
+## SavedVariables: SpekifierDB
+
+# Runtime files in dependency order
+Core\Init.lua
+Core\Database.lua
+Core\Debug.lua
+Core\Events.lua
+Modules\Context\RaidCatalog.lua
+Modules\Context\Resolver.lua
+Modules\Loot\Model.lua
+Modules\Loot\Provider.lua
+Modules\Loot\Journal.lua
+Modules\Loot\Events.lua
+Modules\Loot\Selection.lua
+Modules\Loot\RequestIdentity.lua
+Modules\Loot\Diagnostics.lua
+UI\Skins\Registry.lua
+UI\Skins\Palettes.lua
+UI\Skins\Presentation.lua
+UI\Options\SkinDropdown.lua
+UI\Options\Panel.lua
+UI\Minimap.lua
+UI\Window\Lifecycle.lua
+UI\Window\LootBinding.lua
+UI\Window\Fit.lua
+UI\Window\Layout.lua
+UI\Loot\Tooltips.lua
+UI\Loot\DisplayLists.lua
+UI\Loot\SharedRow.lua
+UI\Loot\ItemRows.lua
+UI\Loot\Columns.lua
+UI\Loot\Renderer.lua
+Modules\Commands.lua
+Modules\Context\AutoShow.lua

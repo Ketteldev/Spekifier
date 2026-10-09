@@ -12,4 +12,4 @@
 
 ## Validation
 
-Run `python Tests/run_tests.py` (or `py Tests/run_tests.py` on Windows) with `lupa` available for all mocked Lua 5.1 suites, syntax checks, and manifest validation. Use `--package <output.zip>` when preparing a clean-install candidate. Automated checks do not replace live WoW acceptance.
+Run `python spec/run_tests.py` (or `py spec/run_tests.py` on Windows) with `lupa` available for all mocked Lua 5.1 suites, syntax checks, and manifest validation. Use `--package <output.zip>` when preparing a clean-install candidate. Automated checks do not replace live WoW acceptance.

@@ -9,7 +9,7 @@ Entering a supported dungeon on Mythic difficulty also opens the window with the
 ## Working approach
 
 - Complete phases in order. Each numbered work item is a small, reviewable chunk.
-- Keep the existing Core, Modules, and UI organization; add focused modules as needed.
+- Keep Core, Modules, and UI as top-level areas; Phase 10 reorganizes their internals by responsibility under the user-authorized structural refactor.
 - Verify API availability, restrictions, and events against the supported Retail client before implementing integrations. The current interface declaration, `120000`, is not proof of current compatibility.
 - Use focused mocked tests for state transitions, encounter resolution, and delayed data. Verify game APIs and frame interaction inside WoW.
 - Complete implementation and automated validation before closing a phase; every checkbox remaining in a completed phase must be checked.
@@ -80,7 +80,7 @@ Acceptance checks:
 
 Live acceptance: see [Manual Acceptance](#manual-acceptance).
 
-Validation: `Tests/AutoShow.lua` passes 78 checks and exercises the production database, event, window, column, command, and auto-show modules with Lua 5.1 frame mocks. Live WoW validation of the template close button, Escape, combat frame interaction, and event timing remains pending; checked acceptance items reflect mocked coverage.
+Validation: `spec/Modules/Context/AutoShow.lua` passes 78 checks and exercises the production database, event, window, column, command, and auto-show modules with Lua 5.1 frame mocks. Live WoW validation of the template close button, Escape, combat frame interaction, and event timing remains pending; checked acceptance items reflect mocked coverage.
 
 Implementation details:
 
@@ -111,7 +111,7 @@ Extends the raid-only eligibility and target-driven lifecycle completed in Phase
 - [x] Allow manual preview in supported dungeon contexts, including with automatic opening disabled. Preserve explanatory empty states outside supported contexts.
 - [x] Preserve existing raid targeting, dismissal, and post-wipe behavior. Gate loot rendering and selection on resolved contexts from later phases.
 
-Primary files: `Modules/AutoShow.lua`, `Core/Events.lua`, `UI/MainWindow.lua`, `Tests/AutoShow.lua`.
+Primary files: `Modules/AutoShow.lua`, `Core/Events.lua`, `UI/MainWindow.lua`, `spec/Modules/Context/AutoShow.lua`.
 
 Acceptance checks:
 
@@ -120,7 +120,7 @@ Acceptance checks:
 - [x] Dismissal, exit/re-entry, combat-deferred entry, login/reload, active-key entry, disabled automatic opening, and manual preview follow the rules above.
 - [x] Existing raid lifecycle checks still pass.
 
-Validation: `Tests/AutoShow.lua` passes 199 checks using Lua 5.1 through Lupa, exercising the production lifecycle, UI, commands, events, and settings modules. This includes all original raid checks and dungeon entry, duplicate events, target independence, dismissal, combat deferral/cancellation, login/reload, active-key difficulty, disabled automation, manual preview, identity/difficulty invalidation, and exit/re-entry. Live WoW validation remains pending; checked acceptance items reflect mocked coverage.
+Validation: `spec/Modules/Context/AutoShow.lua` passes 199 checks using Lua 5.1 through Lupa, exercising the production lifecycle, UI, commands, events, and settings modules. This includes all original raid checks and dungeon entry, duplicate events, target independence, dismissal, combat deferral/cancellation, login/reload, active-key difficulty, disabled automation, manual preview, identity/difficulty invalidation, and exit/re-entry. Live WoW validation remains pending; checked acceptance items reflect mocked coverage.
 
 Implementation details:
 
@@ -166,11 +166,11 @@ Acceptance checks:
 
 Live acceptance: see [Manual Acceptance](#manual-acceptance).
 
-Validation: `Tests/AutoShow.lua` passes 237 checks with Lua 5.1 through Lupa, including all earlier lifecycle scenarios updated to use resolved identities. Phase 3 coverage includes all six Voidspire encounters, both Silken Court units without skull-level classification, unknown/trash/malformed/restricted identities, missing APIs and journal data, mismatched instance/encounter IDs, raid difficulty and encounter changes, unsupported/ambiguous dungeons, delayed challenge-map catalog, reward-source changes, and no shared Journal mutations. Checked acceptance items reflect mocked coverage. Live pre-combat targeting and Retail API/event timing remain pending.
+Validation: `spec/Modules/Context/AutoShow.lua` passes 237 checks with Lua 5.1 through Lupa, including all earlier lifecycle scenarios updated to use resolved identities. Phase 3 coverage includes all six Voidspire encounters, both Silken Court units without skull-level classification, unknown/trash/malformed/restricted identities, missing APIs and journal data, mismatched instance/encounter IDs, raid difficulty and encounter changes, unsupported/ambiguous dungeons, delayed challenge-map catalog, reward-source changes, and no shared Journal mutations. Checked acceptance items reflect mocked coverage. Live pre-combat targeting and Retail API/event timing remain pending.
 
 Implementation details:
 
-- Initial raid scope is The Voidspire (all six encounters) and Nerub'ar Palace's The Silken Court only. Multi-unit mappings cover Vaelgor/Ezzorak, all three Vanguard members, and both Court members. Unknown units, other raids/encounters, and restricted GUIDs fail closed. Mapping/API evidence is documented in `Tests/EncounterSources.md`.
+- Initial raid scope is The Voidspire (all six encounters) and Nerub'ar Palace's The Silken Court only. Multi-unit mappings cover Vaelgor/Ezzorak, all three Vanguard members, and both Court members. Unknown units, other raids/encounters, and restricted GUIDs fail closed. Mapping/API evidence is documented in `spec/Modules/Context/EncounterSources.md`.
 - `C_EncounterJournal.GetInstanceForGameMap` maps the actual game instance to the journal. Verified NPC fallbacks supply journal encounter IDs, then `EJ_GetEncounterInfo` verifies encounter, journal instance, and game map and supplies the localized boss name. Journal creature IDs and localized names are never used as NPC identity. Resolution never changes Journal selection, filters, difficulty, or visibility.
 - Dungeon support is defined by the client's `C_ChallengeMode.GetMapTable()` catalog and a unique `GetMapUIInfo()` game-map match with a journal instance. Contexts identify the challenge-mode end-of-run reward source, visit, actual difficulty, and intended Mythic+ loot mode separately. This identifies the reward source; full item-pool retrieval and verification remain Phase 4, without assuming ordinary Mythic or Great Vault loot is equivalent. No target or active key is required.
 - Missing catalog data does not consume a visit prompt; `CHALLENGE_MODE_MAPS_UPDATE` reevaluates it. Existing visit dismissal, keystone coalescing, and combat deferral remain intact. Visible contexts discard data on difficulty, encounter, unit, visit, journal instance, or reward-source changes.
@@ -211,7 +211,7 @@ Acceptance checks:
 
 Live acceptance: see [Manual Acceptance](#manual-acceptance).
 
-Validation: 386 Lua 5.1 mocked checks pass through Lupa: 79 provider checks, 40 production provider/window integration checks, and all 267 existing lifecycle/resolver/debug checks. Checked acceptance items reflect mocked coverage; live Adventure Guide equivalence, full current Mythic+ chest-pool accuracy, UI/event behavior, and client restrictions remain pending. Evidence, request/result contract, restoration limits, and the live acceptance procedure are documented in `Tests/LootSources.md`.
+Validation: 386 Lua 5.1 mocked checks pass through Lupa: 79 provider checks, 40 production provider/window integration checks, and all 267 existing lifecycle/resolver/debug checks. Checked acceptance items reflect mocked coverage; live Adventure Guide equivalence, full current Mythic+ chest-pool accuracy, UI/event behavior, and client restrictions remain pending. Evidence, request/result contract, restoration limits, and the live acceptance procedure are documented in `spec/Modules/Loot/LootSources.md`.
 
 Implementation details:
 
@@ -262,7 +262,7 @@ Automated acceptance:
 
 Live acceptance: see [Manual Acceptance](#manual-acceptance).
 
-Validation: 507 unique checks pass under Lua 5.1 through Lupa: 267 lifecycle/resolver checks, 79 provider checks, 44 provider/window integration checks, and 117 presentation checks. The checked automated acceptance items reflect mocked coverage of two/three/four specs, UI dimensions, long lists, fixed headers, row reuse, scroll clamping/preservation, child hover continuity, item-link tooltips, disabled/selected states, shared left-click routing, and title-only dragging. Live WoW visual and input validation remains pending; follow `Tests/WindowSources.md`. The real confirmed specialization setter remains Phase 6; production selection stays disabled.
+Validation: 507 unique checks pass under Lua 5.1 through Lupa: 267 lifecycle/resolver checks, 79 provider checks, 44 provider/window integration checks, and 117 presentation checks. The checked automated acceptance items reflect mocked coverage of two/three/four specs, UI dimensions, long lists, fixed headers, row reuse, scroll clamping/preservation, child hover continuity, item-link tooltips, disabled/selected states, shared left-click routing, and title-only dragging. Live WoW visual and input validation remains pending; follow `spec/UI/Window/WindowSources.md`. The real confirmed specialization setter remains Phase 6; production selection stays disabled.
 
 Implementation details:
 
@@ -300,7 +300,7 @@ Acceptance checks:
 - [x] No-shared, all-shared, duplicate-item, and two/four-spec cases render correctly without mutating source loot pools.
 - [x] Loading, failed/partial results, delayed updates, and context/difficulty changes cannot produce a false or stale shared row.
 
-Validation: `Tests/SharedLoot.lua` passes 166 focused Lua 5.1 checks, including real provider delivery/cache preservation, alongside the 507 existing checks (673 unique checks total). The new suite checks two/three/four-spec layouts at three UI sizes, universal/pairwise/unique loot, duplicates, immutable source arrays, missing/partial/failed pools, delayed completion, icon reuse, comparison tooltip ownership, horizontal overflow, empty-column messaging, and difficulty/context/combat invalidation. Checked acceptance items reflect automated coverage; native spacing, hit testing, clipping, tooltip layering, and scrolling still require the live procedure in `Tests/WindowSources.md`.
+Validation: `spec/UI/Loot/SharedRow.lua` passes 166 focused Lua 5.1 checks, including real provider delivery/cache preservation, alongside the 507 existing checks (673 unique checks total). The new suite checks two/three/four-spec layouts at three UI sizes, universal/pairwise/unique loot, duplicates, immutable source arrays, missing/partial/failed pools, delayed completion, icon reuse, comparison tooltip ownership, horizontal overflow, empty-column messaging, and difficulty/context/combat invalidation. Checked acceptance items reflect automated coverage; native spacing, hit testing, clipping, tooltip layering, and scrolling still require the live procedure in `spec/UI/Window/WindowSources.md`.
 
 Implementation details:
 
@@ -340,7 +340,7 @@ Acceptance checks:
 
 Live acceptance: see [Manual Acceptance](#manual-acceptance).
 
-Validation and checkbox evidence: [Phase 6 implementation matrix, automated acceptance and detailed live procedure](Tests/SelectionSources.md). `Tests/LootSpecialization.lua` passes 95 focused Lua 5.1 checks; all existing suites pass, for 768 unique checks. Checked acceptance items represent automated coverage; Blizzard UI and live input/event/taint checks remain pending. The setter/getter and update event were verified against Blizzard's exported API documentation before implementation.
+Validation and checkbox evidence: [Phase 6 implementation matrix, automated acceptance and detailed live procedure](spec/Modules/Loot/SelectionSources.md). `spec/Modules/Loot/Selection.lua` passes 95 focused Lua 5.1 checks; all existing suites pass, for 768 unique checks. Checked acceptance items represent automated coverage; Blizzard UI and live input/event/taint checks remain pending. The setter/getter and update event were verified against Blizzard's exported API documentation before implementation.
 
 Implementation: `Modules/LootSpecialization.lua` owns confirmed state, current-spec resolution, event synchronization and bounded confirmation. Every click re-resolves the actual context without opening a window. Failures never optimistically select a column. Selection remains available during loot loading for a supported context; unavailable specialization data fails closed and retries at lifecycle events. Confirmed clicks close as dismissal and print the exact named system-colored chat message once. Failure notices expire after three seconds; reopening reads the current game-confirmed indicator. Context changes and closing cancel obsolete pending requests/notices. No loot choice is saved by the addon or written on opening/hover/external updates.
 
@@ -371,7 +371,7 @@ Make options accessible through the game settings, preview window, slash command
 - [x] Register new runtime files and any chosen bundled launcher dependencies in the manifest in dependency order.
 - [x] Add focused mocked coverage for shared options routing, command aliases, visibility synchronization, defaults/migration, saved position, and repeat initialization.
 
-Validation: `Tests/Options.lua` passes 63 focused Lua 5.1 checks plus the existing 267 lifecycle checks. All seven suites pass (831 unique checks). Checked implementation and acceptance items reflect mocked coverage and source verification; live category rendering, combat Settings restrictions, input/drag/tooltip placement, persistence and multiple-scale checks remain pending. See [API evidence, automated coverage and required live procedure](Tests/OptionsSources.md). The combat-opening portion of 6.5.1 is implemented through Blizzard's native Settings path but still requires live verification.
+Validation: `spec/UI/Options/Panel.lua` passes 63 focused Lua 5.1 checks plus the existing 267 lifecycle checks. All seven suites pass (831 unique checks). Checked implementation and acceptance items reflect mocked coverage and source verification; live category rendering, combat Settings restrictions, input/drag/tooltip placement, persistence and multiple-scale checks remain pending. See [API evidence, automated coverage and required live procedure](spec/UI/Options/OptionsSources.md). The combat-opening portion of 6.5.1 is implemented through Blizzard's native Settings path but still requires live verification.
 
 Primary files: new `UI/Options.lua`, new `UI/Minimap.lua`, `UI/MainWindow.lua`, `Modules/Commands.lua`, `Core/Database.lua`, initialization wiring, `Spekifier.toc`, focused options/launcher tests, `README.md`.
 
@@ -399,9 +399,9 @@ Acceptance checks:
 - [x] Verify runtime files introduced through Phase 5 appear in the correct manifest order.
 - [x] Verify final manifest order for all current runtime files through Phase 7; repeat when Phases 8/9 introduce files.
 
-Phase 7 automated validation (2026-10-08): all eight Lua 5.1 suites pass, totaling 850 unique checks. `Tests/Integration.lua` adds 19 confirmed-specialization debug checks. `Tests/run_tests.py` verifies syntax, exact manifest order and registration of all 14 runtime files, then optionally creates and validates a clean-install candidate archive. Debug reports the getter's raw setting, Current Specialization/explicit mode and effective confirmed ID/name even with the preview dismissed. The live integration checklist and release record are in `Tests/IntegrationSources.md`. Fresh/upgrade login, clean-folder installation, final build/interface and release author remain pending user evidence; prior Phase 1–6.5 confirmation is not counted as Phase 7 acceptance.
+Phase 7 automated validation (2026-10-08): all eight Lua 5.1 suites pass, totaling 850 unique checks. `spec/Integration.lua` adds 19 confirmed-specialization debug checks. `spec/run_tests.py` verifies syntax, exact manifest order and registration of all 14 runtime files, then optionally creates and validates a clean-install candidate archive. Debug reports the getter's raw setting, Current Specialization/explicit mode and effective confirmed ID/name even with the preview dismissed. The live integration checklist and release record are in `spec/IntegrationSources.md`. Fresh/upgrade login, clean-folder installation, final build/interface and release author remain pending user evidence; prior Phase 1â€“6.5 confirmation is not counted as Phase 7 acceptance.
 
-Manual integration acceptance and evidence-dependent release finalization are tracked in [Manual Acceptance](#manual-acceptance); the detailed procedure remains in `Tests/IntegrationSources.md`.
+Manual integration acceptance and evidence-dependent release finalization are tracked in [Manual Acceptance](#manual-acceptance); the detailed procedure remains in `spec/IntegrationSources.md`.
 
 ## Phase 8: Add addon options for automatic opening
 
@@ -427,7 +427,7 @@ Let users choose where the loot comparison window opens automatically.
 - [x] Preserve raid dismissal, combat deferral, and once-per-dungeon-visit prompting. Changing preferences must not clear dismissal or reset a consumed dungeon prompt; an eligible, unshown visit can prompt when enabled.
 - [x] Include the applicable difficulty preference and effective auto-show permission in `/spek debug`.
 
-Primary files: `UI/Options.lua`, `Core/Database.lua`, `Modules/AutoShow.lua`, initialization wiring, `Modules/Commands.lua`, `Spekifier.toc`, `Tests/AutoShow.lua`, `README.md`.
+Primary files: `UI/Options.lua`, `Core/Database.lua`, `Modules/AutoShow.lua`, initialization wiring, `Modules/Commands.lua`, `Spekifier.toc`, `spec/Modules/Context/AutoShow.lua`, `README.md`.
 
 Acceptance checks:
 
@@ -439,7 +439,7 @@ Acceptance checks:
 - [x] Manual preview, supported-context checks, combat restrictions, and existing dismissal behavior still work with any preference combination.
 - [x] Focused mocked coverage verifies preference gating and lifecycle transitions. In-game settings, dependencies, persistence, and difficulty-specific prompting are tracked in Manual Acceptance.
 
-Phase 8 automated validation (2026-10-09): all nine Lua 5.1 suites pass, totaling 1,167 unique checks, including 317 new checks in `Tests/AutoShowPreferences.lua`. Lua syntax and the unchanged 14-file manifest order pass. Validation ran with `.test-venv/Scripts/python.exe Tests/run_tests.py` and Lupa 2.8 because the system Python had no Lupa or pip; the local environment is ignored. No new runtime files or initialization wiring were needed: the existing options initialization remains sufficient. Difficulty mapping/API evidence, coverage and the full live procedure are in [Tests/AutoShowPreferencesSources.md](Tests/AutoShowPreferencesSources.md). Phase 8 implementation is complete; live acceptance remains pending.
+Phase 8 automated validation (2026-10-09): all nine Lua 5.1 suites pass, totaling 1,167 unique checks, including 317 new checks in `spec/Modules/Context/AutoShowPreferences.lua`. Lua syntax and the unchanged 14-file manifest order pass. Validation ran with `.test-venv/Scripts/python.exe spec/run_tests.py` and Lupa 2.8 because the system Python had no Lupa or pip; the local environment is ignored. No new runtime files or initialization wiring were needed: the existing options initialization remains sufficient. Difficulty mapping/API evidence, coverage and the full live procedure are in [spec/Modules/Context/AutoShowPreferencesSources.md](spec/Modules/Context/AutoShowPreferencesSources.md). Phase 8 implementation is complete; live acceptance remains pending.
 
 ## Phase 9: Add selectable window skins and visual polish
 
@@ -493,11 +493,45 @@ Acceptance checks:
 - [x] The selected appearance survives reload/login, unknown saved values fall back safely, and future skins can be registered through the same dropdown mechanism.
 - [x] Automated geometry, scrolling and skin coverage pass for both skins across tested layouts and scaled display dimensions; full in-game readability and interaction acceptance is tracked in Manual Acceptance.
 
-Phase 9 automated validation (2026-10-09): all ten Lua 5.1 suites pass with Lupa 2.8 using `.test-venv/Scripts/python.exe Tests/run_tests.py`, totaling 1,522 unique checks (355 new focused skin/resizing checks). Lua syntax and the 15-file manifest dependency order pass. Registry/defaults, preference persistence, hidden/combat switching, lifecycle/data/scroll preservation, reused/new rows, shared overflow, late specialization creation, size limits and 2/3/4-spec geometry on three display sizes are covered. Design, API sources, limitations and full live procedures are in [Tests/SkinsSources.md](Tests/SkinsSources.md). Implementation is complete; live visual acceptance and screenshots remain pending.
+Phase 9 automated validation (2026-10-09): all ten Lua 5.1 suites pass with Lupa 2.8 using `.test-venv/Scripts/python.exe spec/run_tests.py`, totaling 1,522 unique checks (355 new focused skin/resizing checks). Lua syntax and the 15-file manifest dependency order pass. Registry/defaults, preference persistence, hidden/combat switching, lifecycle/data/scroll preservation, reused/new rows, shared overflow, late specialization creation, size limits and 2/3/4-spec geometry on three display sizes are covered. Design, API sources, limitations and full live procedures are in [spec/UI/Skins/SkinsSources.md](spec/UI/Skins/SkinsSources.md). Implementation is complete; live visual acceptance and screenshots remain pending.
+
+## Phase 10: Reorganize Lua modules by responsibility
+
+User-requested structural refactor (2026-10-09). Preserve established behavior while giving context, data access, lifecycle, rendering, settings, and styling clear file ownership. Historical primary-file references above describe the original implementation; use the [migration map and validation record](spec/StructureSources.md) for current paths.
+
+- [x] Separate the supported raid catalog from context resolution and group context/prompt behavior together.
+- [x] Separate loot request/cache management, Journal transactions, event recovery, request identity, diagnostics, and confirmed selection.
+- [x] Split columns, pooled rows, shared loot, tooltips, display-list derivation, and rendering into focused UI files using private shared helpers.
+- [x] Move sizing out of skins and move provider subscriptions/diagnostics out of window construction; separate skin registry, palettes, presentation, and options dropdown.
+- [x] Remove the no-op entry point, register all extracted files in dependency order, and migrate test fixtures without changing established assertions except relocated manifest paths.
+- [x] Update README technical documentation and record the old-to-new ownership map.
+- [x] Validate all regression suites, actual-manifest startup, Lua 5.1 syntax, and clean-install packaging; record evidence.
+
+Validation (2026-10-09): `.test-venv/Scripts/python.exe spec/run_tests.py --package Spekifier-phase10-candidate.zip` passes all eleven Lua 5.1 suites, 1,566 unique checks (1,522 existing plus 44 manifest checks), syntax compilation, the 31-file manifest contract, and byte-for-byte ZIP contents validation. Live regression verification is tracked in Manual Acceptance below; previous user-confirmed acceptance remains preserved.
+
+## Phase 11: Source, spec, and release layout
+
+User-requested repository layout change (2026-10-09). Runtime code and the manifest now live in `src/`. Specs and supporting evidence mirror source ownership under `spec/Modules/` and `spec/UI/`; integration/manifest suites and repository-wide records stay at the spec root.
+
+- [x] Move all runtime modules and the manifest into `src/`, preserving addon-relative load order and runtime contents.
+- [x] Move `Tests/` to `spec/`, group suites by source responsibility, and update fixture paths, runner paths, and documentation links.
+- [x] Package only `src/` contents beneath `Spekifier/` through the validated Python runner and a standalone PowerShell script.
+- [x] Update installation/development documentation and repository validation instructions.
+- [x] Run all eleven Lua 5.1 suites, syntax and manifest validation; verify both ZIP builders and relocated documentation links.
+
+Validation (2026-10-09): `.test-venv/Scripts/python.exe spec/run_tests.py --package dist/Spekifier-candidate.zip` passes the same 1,566 unique checks and 31-file manifest contract. PowerShell packaging is exercised with default/custom destinations, repeated output replacement, and invocation outside the repository. Both archives are checked for integrity, exact entry names, and byte equality with `src/`. Runtime contents match the previous Phase 10 candidate. Output inside `src/` is rejected. Local Markdown links resolve. Detailed layout and commands are in [README.md](README.md#validation-and-packaging). WoW is unavailable; live installation remains pending below.
+
+Phase 11 packaging follow-up (2026-10-09):
+
+- [x] Add `scripts/package.sh` for Linux, including temporary staging, ZIP integrity checking, output replacement, and rejection of destinations inside `src/`.
+- [x] Add `scripts/package.lua` as a Lua 5.1+ entry point to the platform packagers, with quoted arguments and nonzero failure propagation.
+- [x] Document all entry points and their dependencies; record performed validation and unavailable tooling.
+
+Validation: the Lua entry point was executed with Lupa's Lua 5.1 runtime on Windows and produced archives with exactly the expected names and source bytes. Default/custom destinations, invocation from `spec/`, repeated replacement, spaces/apostrophes/percent/ampersand/exclamation characters, and rejection of output inside `src/` passed. Unix argument quoting was checked with a mocked command executor for both numeric and boolean success returns. All eleven addon suites (1,566 unique checks), Lua syntax and manifest checks still pass. The shell script was reviewed, but Linux execution and shell syntax-tool validation are unavailable: this workspace has no `sh`/`bash`/`zip` or usable WSL installation. No Linux execution is claimed. Existing live acceptance requirements remain unchanged.
 
 ## Manual Acceptance
 
-Run outstanding checks after all implementation phases are complete. As each phase finishes, append its manual checks here under the source phase; split mixed tasks and preserve the full live procedure. Checked items retain the user's recorded 2026-10-08 confirmation for Phases 1-6.5. Unchecked items are deferred, not passed. Phase 8 and Phase 9 checks are recorded below.
+Run outstanding checks after all implementation phases are complete. As each phase finishes, append its manual checks here under the source phase; split mixed tasks and preserve the full live procedure. Checked items retain the user's recorded 2026-10-08 confirmation for Phases 1-6.5. Unchecked items are deferred, not passed. Phase 8, Phase 9, Phase 10, and Phase 11 checks are recorded below.
 
 Historical pending-live notes in phase validation paragraphs and supporting documents are superseded by this checklist and its recorded confirmations. Only mark a manual check complete after actual verification or explicit user confirmation. Record failures and fix them before final acceptance.
 
@@ -550,7 +584,7 @@ Historical pending-live notes in phase validation paragraphs and supporting docu
 
 ### Phase 7: Final integration and release
 
-Run this combined workflow after Phases 8 and 9 as well. Record the date, Retail version/build/interface, addon version, character/specs, UI scale, installed UI addons, and per-step results in `Tests/IntegrationSources.md`. Earlier Phase 1-6.5 confirmation does not complete this final integration pass.
+Run this combined workflow after Phases 8 and 9 as well. Record the date, Retail version/build/interface, addon version, character/specs, UI scale, installed UI addons, and per-step results in `spec/IntegrationSources.md`. Earlier Phase 1-6.5 confirmation does not complete this final integration pass.
 
 - [ ] Verify fresh saved variables and upgrades through actual WoW login/reload.
 - [ ] Run in-game checks for outdoor areas, dungeon bosses, raid trash, supported raid bosses, multi-boss fights, dead bosses, combat, wipes, and zone exits.
@@ -570,7 +604,7 @@ Use `/dump GetBuildInfo()` for tested client metadata; obtain the author from th
 
 ### Phase 8: Automatic-opening options
 
-Follow [the detailed live procedure and record evidence](Tests/AutoShowPreferencesSources.md#manual-procedure-pending). These checks remain deferred until all implementation phases finish.
+Follow [the detailed live procedure and record evidence](spec/Modules/Context/AutoShowPreferencesSources.md#manual-procedure-pending). These checks remain deferred until all implementation phases finish.
 
 - [ ] In WoW, verify all existing options entry points reach the shared page, Auto-show and five indented controls render correctly, child disabling retains values, Mythic+ explanation is readable, and minimap visibility is independent across UI scales.
 - [ ] Verify mixed parent/child choices persist through actual reload/login and upgrades preserve existing false values while defaulting missing children on.
@@ -580,13 +614,24 @@ Follow [the detailed live procedure and record evidence](Tests/AutoShowPreferenc
 
 ### Phase 9: Skins and window resizing
 
-Follow [the full live procedure and record screenshots/evidence](Tests/SkinsSources.md#manual-procedure-pending). All checks below remain deferred until performed or explicitly confirmed.
+Follow [the full live procedure and record screenshots/evidence](spec/UI/Skins/SkinsSources.md#manual-procedure-pending). All checks below remain deferred until performed or explicitly confirmed.
 
 - [ ] Verify the dropdown offers Original/Elles through every shared-options entry point and remains usable with Auto-show disabled; verify Phase 8 controls and minimap preference remain independent.
 - [ ] Verify fresh/upgrade defaults with EllesmereUI only, ElvUI only, both, neither, installed but disabled/unloaded addons, and startup loading after Spekifier. Verify both saved choices win after addon changes and survive reload/login; unknown values fall back to Original.
 - [ ] Verify both skins in WoW, including repeated switching with the window open, changes while hidden or in combat, reload/login persistence, and interaction with Phase 8 auto-show settings. Confirm no popup, dismissal reset, lost data/position/scroll/selection, duplicate handlers or leftover visuals.
 - [ ] Capture comparison screenshots of both completed skins and review all interaction and data-loading states for visual consistency and readability: outer frame/title/header, close/gear, spec icons/headers, columns, rows, shared label/icons/overflow, scrollbars and status/confirmation; loading, empty, unsupported, failure, hover, confirmed and disabled states.
 - [ ] Verify resizing in WoW with both skins, 2/3/4 specializations, long localized names, long loot lists and multiple UI scales/resolutions, including minimum dimensions, screen bounds, persistence across close/reopen/reload/login and skin switching. Confirm last row access, fixed headers, shared overflow, separate grip hit area, title dragging, tooltips, scrolling and click selection remain functional without clipping/overlap.
+
+### Phase 10: Lua structure refactor
+
+Follow [the clean-install and live regression procedure](spec/StructureSources.md#manual-procedure-pending). These checks require the WoW client and remain unchecked until performed or explicitly confirmed.
+
+- [ ] Install the Phase 10 candidate into a clean Spekifier folder; verify login/reload without missing-file or Lua errors and preservation of existing preferences.
+- [ ] Verify supported raid and Mythic dungeon prompts, dismissal/combat behavior, delayed loot and native tooltips, shared scrolling, selection confirmation, both skins/resizing, all options entry points, and hidden-window diagnostics using the linked Phase 7/8/9 procedures.
+
+### Phase 11: Source/spec release layout
+
+- [ ] Extract `dist/Spekifier-candidate.zip` into a clean `Interface/AddOns` directory and confirm `Spekifier/Spekifier.toc` is directly inside the addon folder. Login/reload without missing-file or Lua errors and run the primary boss-target-to-loot-selection workflow in [the integration procedure](spec/IntegrationSources.md). Record client/build/results there; this may be combined with final integration and Phase 10 clean-install acceptance using the newest candidate.
 
 ## Definition of Done
 

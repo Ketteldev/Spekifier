@@ -1,0 +1,28 @@
+# Phase 7 integration and release acceptance
+
+Layout update (Phase 11): runtime paths in this historical record are now relative to `src/`. Suite commands and links use the relocated `spec/` paths. Earlier candidate descriptions record the packaging at that time; current ZIPs contain only `src/` contents under `Spekifier/`, and acceptance documentation stays in the repository. See [current packaging instructions](../README.md#validation-and-packaging).
+
+## Automated validation
+
+Run each Lua suite with Lua 5.1 from the repository root, or run `python spec/run_tests.py` with `lupa` installed. The runner uses isolated Lua runtimes, compiles every Lua source, and verifies the exact final manifest order and that every runtime file is registered. Eight suites provide 850 unique checks; lifecycle checks repeated by dependent suites are counted once.
+
+`spec/Integration.lua` adds 19 checks for confirmed loot-spec debug reporting: explicit selection, Current Specialization and active-spec changes, getter errors, invalid IDs, combat, and dismissed-window/frame stability. Existing suites cover fresh/legacy settings, raid and dungeon rejection/lifecycle, multi-boss resolution, stale provider callbacks, delayed data, pooled UI frames, selection confirmation/failure, options and minimap behavior.
+
+`python spec/run_tests.py --package Spekifier-phase7-candidate.zip` builds a clean-folder candidate only after all checks pass. Its top-level folder is `Spekifier`; it contains the manifest, all 14 runtime Lua files, README and supporting acceptance/source documents. No repository metadata, saved variables, development scripts or test harness is included. The runner checks archive integrity, exact contents and byte equality. This verifies packaging, not installation in WoW.
+
+## Live acceptance record
+
+Status: deferred until all implementation phases are complete; tracked in `PLAN.md` under `## Manual Acceptance`. Phase 7 implementation is complete. The user's earlier confirmation covers Phases 1 through 6.5, not this final combined workflow.
+
+Record date, `GetBuildInfo()` version/build/interface, addon version, UI scale, installed UI addons, tested character/class/specs and result for every step. Obtain version/build/interface in game with `/dump GetBuildInfo()`. Confirm the manifest Interface matches the tested client before release. Author and final release metadata await user input; current metadata is not a compatibility claim.
+
+1. Back up saved variables. Install the candidate into a clean `Interface/AddOns/Spekifier` folder, avoiding a nested Spekifier folder or leftover files. With fresh saved variables, login outdoors: no popup, visible launcher, default options, usable manual empty preview, disabled selection. Reload and verify preferences persist without restoring visibility.
+2. Restore an older saved-variable layout with false preferences, unrelated settings and `windowShown=true`. Login/reload: preferences survive, missing defaults appear, saved visibility is removed, and no obsolete popup returns.
+3. Test outdoor targets, Normal/Heroic dungeon entry and dungeon boss targets, raid trash, unsupported raid targets and dead supported bosses. None automatically opens. Test supported living Voidspire bosses, multi-unit encounters and Silken Court at an older character-relative level: the correct encounter/difficulty opens.
+4. Change targets rapidly and change raid difficulty while data loads. Old rows/tooltips/results disappear; only current results render. Close with Escape, template close and command: no immediate reopening; clearing/retargeting permits a new prompt. Combat hides both manual/automatic previews; after a wipe a living raid target can prompt. Zone exit removes context and prevents selection.
+5. Enter a supported ordinary Mythic dungeon without a target/key: one Mythic+ preview with full agreed combined Mythic boss pool. Compare each spec's item identities with the Adventure Guide across all bosses at difficulty 23, excluding per-player bonus drops. No exact key reward item level is claimed. Repeat with an active key, keystone start and duplicate entry events: no second prompt.
+6. Enter during combat: defer until combat ends in the same visit. After display/dismissal, target changes and combat cycles do not reopen. Exit/re-enter permits a new prompt. Leave while loading or switch dungeon/difficulty: obsolete results are discarded; exit prevents stale selection. Test automatic opening disabled and manual preview.
+7. Click each spec in supported raid/dungeon contexts, including before a key starts and while loot loads. The Blizzard getter/menu confirms the intended spec; success closes the window, emits the exact confirmation and preserves dismissal. Test external loot-spec changes, Current Specialization following active spec, setter failure and combat/context change at click time. `/spek debug` reports raw setting, effective confirmed ID/name and availability without reopening.
+8. Repeat targeting, preview opens/closes, initialization and reload. Observe stable frame/handler/request behavior, correct delayed loading, tooltips, independent scrolling/shared items and no stale content. Verify options/gear/minimap access and saved preferences in the clean install. Monitor Lua errors and taint/API restrictions on the recorded Retail build.
+
+Only check the corresponding items in PLAN.md's Manual Acceptance section after recording successful results. Final release requires confirmed build/interface, author (when supplied), final workflow documentation and this clean-install primary boss-to-selection test. Complete Phases 8 and 9 before running this final integration acceptance pass, and include their manual checks from PLAN.md.
