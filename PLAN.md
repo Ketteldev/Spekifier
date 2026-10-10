@@ -621,11 +621,12 @@ Validation (2026-10-10): all local checks above passed. Temporary Python tooling
 - [x] Parse workflow YAML and verify release trigger, validation dependencies, deploy gates and token names; rerun all native Lua suites and repository-owned lint. No distribution IDs are invented and no upload is performed locally.
 
 - [x] Add user-provided Wago project ID `96d04q6O` to the manifest, preserving its exact case; document the configured destination and validate all native Lua suites, syntax and manifest checks.
-- [ ] Configure actual CurseForge/WoWInterface project IDs if those destinations are intended, or obtain user confirmation that Wago is the only intended addon-site destination. Phase 15 remains incomplete pending destination scope/configuration.
+- [x] Add user-provided CurseForge project ID `1737398` to the manifest; update destination documentation and validate all native Lua suites, syntax and manifest checks.
+- [ ] Configure the actual WoWInterface listing ID if that destination is intended, or obtain user confirmation that CurseForge and Wago are the only intended addon-site destinations. Phase 15 remains incomplete pending destination scope/configuration.
 
 Secret-name follow-up (2026-10-10): preserve the user-selected repository secret names and map them to the packager?s required environment variables. Updated all setup references and verified workflow YAML mappings. Corrected the placement of Phases 14/15 after Phase 13; manual acceptance stays before Definition of Done.
 
-Validation (2026-10-10): packager documentation/source confirms token names and required TOC project IDs. The manifest now contains user-provided Wago ID `96d04q6O`; CurseForge/WoWInterface IDs remain absent. GitHub run logs and secret configuration have not been inspected; configuration findings do not establish which failure occurred in the user's release. Live upload and metadata obligations remain pending below.
+Validation (2026-10-10): packager documentation/source confirms token names and required TOC project IDs. The manifest now contains user-provided CurseForge ID `1737398` and Wago ID `96d04q6O`; the WoWInterface ID remains absent. GitHub run logs and secret configuration have not been inspected; configuration findings do not establish which failure occurred in the user's release. Live upload and metadata obligations remain pending below.
 
 
 ## Manual Acceptance

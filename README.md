@@ -202,10 +202,10 @@ The workflow maps `CURSEFORGE_TOKEN` ? `CF_API_TOKEN`, `WOWINTERFACE_TOKEN` ? `W
 
 The example's `CF_API_KEY` and `GITHUB_OAUTH` environment names are deprecated aliases; this workflow uses the packager's current names. See [packager source](https://github.com/BigWigsMods/packager/blob/master/release.sh) and [GitHub token permissions](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token).
 
-Wago project `96d04q6O` is configured in `src/Spekifier.toc`. The workflow reads its upload credential from the `WAGO_TOKEN` repository secret. CurseForge and WoWInterface project IDs remain unconfigured; add their actual IDs after registering the listings:
+CurseForge project `1737398` and Wago project `96d04q6O` are configured in `src/Spekifier.toc`. The workflow reads their upload credentials from `CURSEFORGE_TOKEN` and `WAGO_TOKEN`, respectively. WoWInterface remains unconfigured; add its actual listing ID after registration:
 
 ```toc
-## X-Curse-Project-ID: <numeric CurseForge project ID>
+## X-Curse-Project-ID: 1737398
 ## X-WoWI-ID: <numeric WoWInterface listing ID>
 ## X-Wago-ID: 96d04q6O
 ```

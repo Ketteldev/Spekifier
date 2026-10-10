@@ -2,9 +2,10 @@
 ## Title: Spekifier
 ## IconTexture: Interface\AddOns\Spekifier\Media\logo_64.tga
 ## Notes: A World of Warcraft add-on
-## Author: YourName
+## Author: KettelDev
 ## Version: 12.0.0
 ## SavedVariables: SpekifierDB
+## X-Curse-Project-ID: 1737398
 ## X-Wago-ID: 96d04q6O
 
 # Runtime files in dependency order
