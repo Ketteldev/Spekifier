@@ -5,6 +5,7 @@
 ## Author: YourName
 ## Version: 12.0.0
 ## SavedVariables: SpekifierDB
+## X-Wago-ID: 96d04q6O
 
 # Runtime files in dependency order
 Core\Init.lua

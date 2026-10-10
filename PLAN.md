@@ -13,19 +13,7 @@ Entering a supported dungeon on Mythic difficulty also opens the window with the
 - Verify API availability, restrictions, and events against the supported Retail client before implementing integrations. The current interface declaration, `120000`, is not proof of current compatibility.
 - Use focused mocked tests for state transitions, encounter resolution, and delayed data. Verify game APIs and frame interaction inside WoW.
 - Complete implementation and automated validation before closing a phase; every checkbox remaining in a completed phase must be checked.
-- As each phase completes, move its manual/live checks into `## Phase 14: Native Lua validation and repository-owned CI standards
-
-Supersedes Phase 13's DBM-derived validation setup under the user's 2026-10-10 instruction. Historical Python/Lupa commands above record validation actually performed at the time; current commands are in [README.md](README.md#validation-and-packaging).
-
-- [x] Remove `spec/run_tests.py` and replace it with [spec/run_tests.lua](spec/run_tests.lua), retaining all eleven suites, Lua 5.1 compilation, exact manifest order/registration checks and suite isolation. Use LuaFileSystem for directory discovery and the existing platform packaging scripts for ZIPs.
-- [x] Replace DBM's remote Luacheck configuration and LuaLS action with standard Luacheck 1.2.0 and a repository-owned [.luacheckrc](.luacheckrc): Lua 5.1 globals, explicit WoW API/addon globals, default warning checks and 120-character lines; unused colon-method receivers are allowed. Resolve existing unused addon-name bindings, line lengths, shadowed restoration variables and empty filtering branches without weakening the checks or changing loot filtering behavior.
-- [x] Run native Lua suites/syntax/manifest validation and Luacheck in CI, with both PR packaging and deployment gated on their success. Update current validation instructions in AGENTS.md, README.md and supporting procedures; preserve historical evidence.
-- [x] Validate all eleven suites using a native Lua 5.1 interpreter; Luacheck 1.2.0 reports zero warnings/errors across all 31 runtime files. Verify runner rejection of unregistered runtime files, invalid syntax, duplicate manifest entries and failing suites, and verify globals/library tables cannot leak between suites. Parse workflow YAML and verify downstream gates.
-- [x] Build `dist/Spekifier-native-lua-candidate.zip` through `lua scripts/package.lua`, exercising the PowerShell packager; independently confirm ZIP integrity, exact `src/` file set and byte equality. Validation tools were downloaded into the ignored `.test-venv/native-lua` directory; they are not repository dependencies or release contents.
-
-Validation (2026-10-10): all local checks above passed. Temporary Python tooling was used to download native tools, parse YAML and independently inspect the ZIP; the committed runner and CI require neither Python nor Lupa. GitHub-hosted execution and WoW are unavailable locally; their remaining obligations are in Manual Acceptance. No new live result or release readiness is claimed.
-
-## Manual Acceptance`, grouped by source phase, to run after all implementation phases. Preserve confirmed results; deferred checks stay unchecked. Split mixed implementation/manual tasks so neither obligation is lost.
+- As each phase completes, move its manual/live checks into `## Manual Acceptance`, grouped by source phase, to run after all implementation phases. Preserve confirmed results; deferred checks stay unchecked. Split mixed implementation/manual tasks so neither obligation is lost.
 - Keep future implementation in its owning phase. Track release metadata and documentation that depend on live results with final manual release checks.
 
 Live verification update (2026-10-08): The user confirmed completion of all 17 previously unchecked live-validation items in Phases 1 through 6.5. Those items are now checked based on that confirmation. Earlier validation paragraphs and supporting test documents describe the implementation-time status; their pending-live statements are superseded by this update for these items. Applying the Phase 9 skins to shared-item controls is tracked in Phase 9.
@@ -614,6 +602,32 @@ The previous development-PR and merge-release design is superseded by the user's
 
 Workflow schema follow-up (2026-10-09): Removed the copied deployment `strategy.fail-fast` block, which controls matrix jobs but this deployment has no matrix. Parsed `cicd.yml` with PyYAML and verified deployment dependencies and permissions remain intact; full local mocked suites, syntax and manifest checks passed. Updated documentation links after the workflow rename. IDE diagnostics and GitHub execution remain unverified.
 
+## Phase 14: Native Lua validation and repository-owned CI standards
+
+Supersedes Phase 13's DBM-derived validation setup under the user's 2026-10-10 instruction. Historical Python/Lupa commands above record validation actually performed at the time; current commands are in [README.md](README.md#validation-and-packaging).
+
+- [x] Remove `spec/run_tests.py` and replace it with [spec/run_tests.lua](spec/run_tests.lua), retaining all eleven suites, Lua 5.1 compilation, exact manifest order/registration checks and suite isolation. Use LuaFileSystem for directory discovery and the existing platform packaging scripts for ZIPs.
+- [x] Replace DBM's remote Luacheck configuration and LuaLS action with standard Luacheck 1.2.0 and a repository-owned [.luacheckrc](.luacheckrc): Lua 5.1 globals, explicit WoW API/addon globals, default warning checks and 120-character lines; unused colon-method receivers are allowed. Resolve existing unused addon-name bindings, line lengths, shadowed restoration variables and empty filtering branches without weakening the checks or changing loot filtering behavior.
+- [x] Run native Lua suites/syntax/manifest validation and Luacheck in CI, with both PR packaging and deployment gated on their success. Update current validation instructions in AGENTS.md, README.md and supporting procedures; preserve historical evidence.
+- [x] Validate all eleven suites using a native Lua 5.1 interpreter; Luacheck 1.2.0 reports zero warnings/errors across all 31 runtime files. Verify runner rejection of unregistered runtime files, invalid syntax, duplicate manifest entries and failing suites, and verify globals/library tables cannot leak between suites. Parse workflow YAML and verify downstream gates.
+- [x] Build `dist/Spekifier-native-lua-candidate.zip` through `lua scripts/package.lua`, exercising the PowerShell packager; independently confirm ZIP integrity, exact `src/` file set and byte equality. Validation tools were downloaded into the ignored `.test-venv/native-lua` directory; they are not repository dependencies or release contents.
+
+Validation (2026-10-10): all local checks above passed. Temporary Python tooling was used to download native tools, parse YAML and independently inspect the ZIP; the committed runner and CI require neither Python nor Lupa. GitHub-hosted execution and WoW are unavailable locally; their remaining obligations are in Manual Acceptance. No new live result or release readiness is claimed.
+
+## Phase 15: Repair addon-site release publishing
+
+- [x] Trigger validation on published GitHub releases and deploy after validation. Keep main-push deployment; tag pushes validate without deploying to avoid duplicate release uploads.
+- [x] Pass the packager's documented `CF_API_TOKEN`, `WOWI_API_TOKEN` and `WAGO_API_TOKEN` environment variables from repository secrets `CURSEFORGE_TOKEN`, `WOWINTERFACE_TOKEN` and `WAGO_TOKEN`, respectively; retain `GITHUB_API_TOKEN` and release write permission. Update README setup and behavior.
+- [x] Parse workflow YAML and verify release trigger, validation dependencies, deploy gates and token names; rerun all native Lua suites and repository-owned lint. No distribution IDs are invented and no upload is performed locally.
+
+- [x] Add user-provided Wago project ID `96d04q6O` to the manifest, preserving its exact case; document the configured destination and validate all native Lua suites, syntax and manifest checks.
+- [ ] Configure actual CurseForge/WoWInterface project IDs if those destinations are intended, or obtain user confirmation that Wago is the only intended addon-site destination. Phase 15 remains incomplete pending destination scope/configuration.
+
+Secret-name follow-up (2026-10-10): preserve the user-selected repository secret names and map them to the packager?s required environment variables. Updated all setup references and verified workflow YAML mappings. Corrected the placement of Phases 14/15 after Phase 13; manual acceptance stays before Definition of Done.
+
+Validation (2026-10-10): packager documentation/source confirms token names and required TOC project IDs. The manifest now contains user-provided Wago ID `96d04q6O`; CurseForge/WoWInterface IDs remain absent. GitHub run logs and secret configuration have not been inspected; configuration findings do not establish which failure occurred in the user's release. Live upload and metadata obligations remain pending below.
+
+
 ## Manual Acceptance
 
 Run outstanding checks after all implementation phases are complete. As each phase finishes, append its manual checks here under the source phase; split mixed tasks and preserve the full live procedure. Checked items retain the user's recorded 2026-10-08 confirmation for Phases 1-6.5. Unchecked items are deferred, not passed. Phase 8, Phase 9, Phase 10, and Phase 11 checks are recorded below.
@@ -735,13 +749,18 @@ Follow [the clean-install and live regression procedure](spec/StructureSources.m
 Follow [workflow behavior and deployment setup](README.md#github-automation). These checks require GitHub execution and remain pending.
 
 - [ ] Configure account-level budgets as needed to prevent paid Actions minutes/storage/cache usage.
-- [ ] Register distribution projects, set the three actual public project IDs in `src/Spekifier.toc`, and store `CF_API_TOKEN`, `WOWI_API_TOKEN`, and `WAGO_API_TOKEN` in repository secrets. Confirm GitHub deployment has `contents: write` permission.
+- [ ] Register distribution projects, set the three actual public project IDs in `src/Spekifier.toc`, and store `CURSEFORGE_TOKEN`, `WOWINTERFACE_TOKEN`, and `WAGO_TOKEN` in repository secrets. Confirm GitHub deployment has `contents: write` permission.
 - [ ] Open/update/reopen a PR against `main`; verify repository-owned Luacheck and Lua suite/syntax/manifest checks, installable ZIP artifact with 14-day retention and updated same-repository download comment. Confirm fork PRs skip commenting and PRs never deploy.
-- [ ] After live release acceptance and metadata finalization, verify untagged `main` push packaging/alpha uploads, then push a release tag such as `v12.0.0`; verify intended CurseForge, GitHub Release, WoWInterface and Wago uploads, changelog and clean installable ZIP. Record evidence and failures.
+- [ ] After live release acceptance and metadata finalization, verify untagged `main` push packaging/alpha uploads, then publish a GitHub release with a tag such as `v12.0.0`; verify intended CurseForge, GitHub Release, WoWInterface and Wago uploads, changelog and clean installable ZIP. Record evidence and failures.
 
 ### Phase 14: Native Lua validation
 
 - [ ] Run the updated workflow on GitHub and confirm Lua 5.1/LuaFileSystem/Luacheck installation and both validation steps pass before packaging. Record evidence alongside the [Phase 13 automation checks](#phase-13-github-automation); use [the current candidate](README.md#validation-and-packaging) for the outstanding clean-install and in-game regression procedures.
+
+### Phase 15: Addon-site publishing
+
+- [ ] Confirm matching repository secret names in GitHub without exposing token values.
+- [ ] Commit the corrected workflow and metadata, publish a release containing those changes, and verify addon-site uploads and GitHub ZIP attachment in Actions logs. Preserve outstanding live release acceptance; see [deployment setup](README.md#deployment-setup).
 
 ## Definition of Done
 

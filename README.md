@@ -179,13 +179,13 @@ Detailed evidence and procedures: [encounter support](spec/Modules/Context/Encou
 
 ## GitHub automation
 
-[CI](.github/workflows/cicd.yml) runs on pushes to `main`, pushes of any tag, and opened/updated/reopened PRs against `main`.
+[CI](.github/workflows/cicd.yml) runs on pushes to `main`, pushes of any tag, opened/updated/reopened PRs against `main`, and published GitHub releases.
 
 The Testing job installs Lua 5.1, LuaFileSystem and Luacheck 1.2.0. It runs Luacheck against `src/` with the repository-owned [.luacheckrc](.luacheckrc), then runs `lua5.1 spec/run_tests.lua`. Both must pass before packaging or deployment. The lint configuration uses [Luacheck's standard Lua 5.1 globals](https://luacheck.readthedocs.io/en/stable/cli.html), explicitly lists the WoW APIs and addon globals used here, and retains default warning checks and the 120-character line limit. Colon-method receivers may be unused (`self = false`); other unused locals/arguments remain checked. Test mocks are checked through compilation and execution rather than addon-global lint rules. DBM code, configurations, annotations and actions are not fetched; LuaLS remains an optional local editor tool configured by `.luarc.json`.
 
 After checks pass, PRs create ZIPs using BigWigs' packager with uploads disabled (`-d`). ZIP artifacts remain downloadable for 14 days. PRs originating in this repository receive a comment linking the artifact, updated on subsequent runs; fork PRs do not receive the comment. Deployment never runs for PR events.
 
-After checks pass on a push to `main` or a tag, the Deployment job runs the packager with publishing credentials. Untagged builds can upload alpha packages to CurseForge/Wago; GitHub Releases and WoWInterface uploads require a tag. The workflow does not create tags or enforce semantic versions: create and push release tags yourself (for example, `v12.0.0`). The addon Version remains `12.0.0`; keep release metadata accurate. [.pkgmeta](.pkgmeta) moves `src/` contents into a single installable `Spekifier/` folder and excludes repository tooling. The packager also generates a changelog.
+After checks pass on a push to `main` or publication of a GitHub release, the Deployment job runs the packager with publishing credentials. Untagged builds can upload alpha packages to CurseForge/Wago; GitHub Releases and WoWInterface uploads require a tag. The workflow does not create tags or enforce semantic versions: publish a GitHub release with a version tag (for example, `v12.0.0`). Tag pushes run validation but do not deploy, avoiding duplicate uploads when the release is published. The repository secret names below are mapped to the packager?s required environment names in the workflow; no secret renaming is needed. Publishing also requires the project IDs below. The addon Version remains `12.0.0`; keep release metadata accurate. [.pkgmeta](.pkgmeta) moves `src/` contents into a single installable `Spekifier/` folder and excludes repository tooling. The packager also generates a changelog.
 
 ### Deployment setup
 
@@ -193,19 +193,21 @@ Create the Spekifier project/listing on each distribution service first. In GitH
 
 | Destination | Repository secret | Where to obtain it |
 | --- | --- | --- |
-| CurseForge | `CF_API_TOKEN` | [CurseForge author API tokens](https://authors.curseforge.com/#/settings/api-tokens), using an account authorized to upload to the project. This is an author upload token, not a general CurseForge Core API key. |
-| WoWInterface | `WOWI_API_TOKEN` | [WoWInterface API tokens](https://www.wowinterface.com/downloads/filecpl.php?action=apitokens), using the listing owner's account. |
-| Wago | `WAGO_API_TOKEN` | [Wago Addons API keys](https://addons.wago.io/account/apikeys), using an account authorized for the project. |
+| CurseForge | `CURSEFORGE_TOKEN` | [CurseForge author API tokens](https://authors.curseforge.com/#/settings/api-tokens), using an account authorized to upload to the project. This is an author upload token, not a general CurseForge Core API key. |
+| WoWInterface | `WOWINTERFACE_TOKEN` | [WoWInterface API tokens](https://www.wowinterface.com/downloads/filecpl.php?action=apitokens), using the listing owner's account. |
+| Wago | `WAGO_TOKEN` | [Wago Addons API keys](https://addons.wago.io/account/apikeys), using an account authorized for the project. |
 | GitHub | None to add | GitHub automatically supplies `GITHUB_TOKEN`; the deployment job grants `contents: write` and passes it as `GITHUB_API_TOKEN`. No personal access token is required. |
+
+The workflow maps `CURSEFORGE_TOKEN` ? `CF_API_TOKEN`, `WOWINTERFACE_TOKEN` ? `WOWI_API_TOKEN`, and `WAGO_TOKEN` ? `WAGO_API_TOKEN`. These environment names are the packager?s interface, while the secret names are your repository?s choice.
 
 The example's `CF_API_KEY` and `GITHUB_OAUTH` environment names are deprecated aliases; this workflow uses the packager's current names. See [packager source](https://github.com/BigWigsMods/packager/blob/master/release.sh) and [GitHub token permissions](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token).
 
-Credentials alone are insufficient: add the actual project IDs to `src/Spekifier.toc` after registering the listings:
+Wago project `96d04q6O` is configured in `src/Spekifier.toc`. The workflow reads its upload credential from the `WAGO_TOKEN` repository secret. CurseForge and WoWInterface project IDs remain unconfigured; add their actual IDs after registering the listings:
 
 ```toc
 ## X-Curse-Project-ID: <numeric CurseForge project ID>
 ## X-WoWI-ID: <numeric WoWInterface listing ID>
-## X-Wago-ID: <Wago project ID>
+## X-Wago-ID: 96d04q6O
 ```
 
 These IDs are public metadata, not secrets. CurseForge's ID is on the project page, WoWInterface's is the number in its `info<ID>` listing URL, and Wago's is in its developer dashboard. Do not paste the placeholder lines into the manifest. Missing credentials or IDs cause destinations to be skipped. [Packager setup and credential documentation](https://github.com/BigWigsMods/packager)
