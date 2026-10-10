@@ -2,9 +2,9 @@
 
 **Compare loot across your specializations and choose your loot spec before the fight.**
 
-Spekifier is a World of Warcraft Retail addon that puts your class's loot options side by side. Target a supported raid boss or enter a supported Mythic dungeon to see what each specialization can receive, then click a column to set your loot specialization.
+Spekifier is a World of Warcraft Retail addon that puts your class's loot options side by side. Target a supported raid boss or enter a supported Mythic dungeon to see what each spekialization can receive, then click a column to set your loot spekialization.
 
-The aim is simple: make it easier to choose which spec to collect gear for before rewards are decided, with fewer trips through the Adventure Guide and loot specialization menu.
+The aim is simple: make it easier to choose which spek to collect gear for before rewards are decided, with fewer trips through the Adventure Guide and loot specialization menu.
 
 ## Features
 
@@ -13,21 +13,6 @@ The aim is simple: make it easier to choose which spec to collect gear for befor
 - **Click to choose:** select a loot specialization directly from its column, with confirmation from the game.
 - **Timely reminders:** automatic previews for supported raid targets and Mythic dungeon entry, with separate controls for each content type.
 - **Make it fit your UI:** two built-in skins, a movable and resizable window, and a draggable minimap launcher.
-
-## Installation
-
-1. Extract a release ZIP and place its `Spekifier` folder in your Retail installation's `Interface/AddOns` directory:
-
-   ```text
-   World of Warcraft/_retail_/Interface/AddOns/Spekifier/
-   ```
-
-2. Check that `Spekifier.toc` is directly inside that folder, rather than inside another nested folder.
-3. Start or restart WoW and enable **Spekifier** in the character-selection AddOns list.
-
-When installing from a source checkout, copy the **contents of `src/`** into `AddOns/Spekifier/`. The repository root is not the installable addon.
-
-Spekifier is designed for **Retail WoW**. Neither ElvUI nor EllesmereUI is required.
 
 ## How to use it
 
@@ -141,19 +126,23 @@ The [Phase 10 refactor record](spec/StructureSources.md) maps previous filenames
 
 The root `.luarc.json` configures Lua Language Server for Lua 5.1, matching the addon and test runtime. Reload the language server after changing its configuration.
 
-From the repository root, with Python and `lupa` installed:
+From the repository root, install Lua 5.1, LuaFileSystem and Luacheck:
 
 ```sh
-python spec/run_tests.py
+luarocks --lua-version=5.1 install luafilesystem
+luarocks --lua-version=5.1 install luacheck 1.2.0-1
+lua spec/run_tests.lua
+luacheck src --config .luacheckrc
 ```
 
-The runner executes all eleven mocked Lua 5.1 suites, compiles Lua sources, and validates the manifest's runtime files and load order. To validate and build a clean-install candidate:
+Use `lua5.1` instead of `lua` if your system names the Lua 5.1 executable that way. The runner requires Lua 5.1, executes all eleven mocked suites with isolated globals and library tables, compiles all addon/test/packaging Lua sources, and validates the manifest's exact runtime files and load order. Python and Lupa are no longer required. LuaFileSystem supplies directory discovery; assertions in the existing Lua suites perform the tests.
+
+To validate and build a clean-install candidate, run the tests first, then the existing packager:
 
 ```sh
-python spec/run_tests.py --package dist/Spekifier-candidate.zip
+lua spec/run_tests.lua
+lua scripts/package.lua dist/Spekifier-candidate.zip
 ```
-
-On Windows, use `py` instead of `python`, or the repository-local `.test-venv/Scripts/python.exe` when that environment is available.
 
 For packaging alone, PowerShell 5.1 or later can build the ZIP without Python or Lupa, from any working directory:
 
@@ -182,8 +171,45 @@ Lua's standard library has no ZIP API. This entry point delegates compression to
 
 The default output is `dist/Spekifier.zip` under the repository; explicit relative output paths are relative to the caller's working directory. Existing output files are replaced. Run the test runner before publishing.
 
-All packaging routes put only the contents of `src/` inside a single `Spekifier/` folder, with `Spekifier.toc` directly inside it. Documentation, tests, and development tooling stay in the repository. New runtime assets should live in `src/` to be included automatically. The manifest suite loads every runtime file in release order and exercises startup, loot delivery, skin switching, hidden diagnostics, reopening, and selection.
+All packaging routes put only the contents of `src/` inside a single `Spekifier/` folder, with `Spekifier.toc` directly inside it. Documentation, tests, and development tooling stay in the repository. New runtime assets should live in `src/` to be included automatically. The supplied PNG logos in `assets/` are development sources; their uncompressed 32-bit TGA copies in `src/Media/` preserve color and transparency for the game. After editing the PNGs, run `./scripts/convert-logos.ps1` before Linux packaging or committing the runtime textures; the PowerShell packager refreshes them automatically. The minimap uses the 32x32 source in a 24x24 inset within its 32x32 bordered button; the loot window displays the 64x64 logo at native size beside a left-aligned Spekifier title and encounter heading, with a 12-pixel gap above the loot controls. This draggable header replaces the centered template title bar in both skins. Addon metadata uses the same logo asset. The 128x128 source is reserved for larger artwork. The manifest suite loads every runtime file in release order and exercises startup, loot delivery, skin switching, hidden diagnostics, reopening, and selection.
 
-Implementation is complete through Phase 11. Recorded live acceptance covers Phases 1–6.5; final integration, Phase 8/9/10/11 live checks, and release metadata finalization remain tracked in [PLAN.md](PLAN.md#manual-acceptance). Automated checks and the manifest's interface declaration do not establish live client compatibility.
+Implementation is complete through Phase 14. Recorded live acceptance covers Phases 1–6.5; final integration, Phase 8/9/10/11 live checks, and release metadata finalization remain tracked in [PLAN.md](PLAN.md#manual-acceptance). Automated checks and the manifest's interface declaration do not establish live client compatibility.
 
 Detailed evidence and procedures: [encounter support](spec/Modules/Context/EncounterSources.md), [loot data](spec/Modules/Loot/LootSources.md), [window and shared loot](spec/UI/Window/WindowSources.md), [selection](spec/Modules/Loot/SelectionSources.md), [options and minimap](spec/UI/Options/OptionsSources.md), [automatic-opening preferences](spec/Modules/Context/AutoShowPreferencesSources.md), [skins and resizing](spec/UI/Skins/SkinsSources.md), and [integration and release acceptance](spec/IntegrationSources.md).
+
+## GitHub automation
+
+[CI](.github/workflows/cicd.yml) runs on pushes to `main`, pushes of any tag, and opened/updated/reopened PRs against `main`.
+
+The Testing job installs Lua 5.1, LuaFileSystem and Luacheck 1.2.0. It runs Luacheck against `src/` with the repository-owned [.luacheckrc](.luacheckrc), then runs `lua5.1 spec/run_tests.lua`. Both must pass before packaging or deployment. The lint configuration uses [Luacheck's standard Lua 5.1 globals](https://luacheck.readthedocs.io/en/stable/cli.html), explicitly lists the WoW APIs and addon globals used here, and retains default warning checks and the 120-character line limit. Colon-method receivers may be unused (`self = false`); other unused locals/arguments remain checked. Test mocks are checked through compilation and execution rather than addon-global lint rules. DBM code, configurations, annotations and actions are not fetched; LuaLS remains an optional local editor tool configured by `.luarc.json`.
+
+After checks pass, PRs create ZIPs using BigWigs' packager with uploads disabled (`-d`). ZIP artifacts remain downloadable for 14 days. PRs originating in this repository receive a comment linking the artifact, updated on subsequent runs; fork PRs do not receive the comment. Deployment never runs for PR events.
+
+After checks pass on a push to `main` or a tag, the Deployment job runs the packager with publishing credentials. Untagged builds can upload alpha packages to CurseForge/Wago; GitHub Releases and WoWInterface uploads require a tag. The workflow does not create tags or enforce semantic versions: create and push release tags yourself (for example, `v12.0.0`). The addon Version remains `12.0.0`; keep release metadata accurate. [.pkgmeta](.pkgmeta) moves `src/` contents into a single installable `Spekifier/` folder and excludes repository tooling. The packager also generates a changelog.
+
+### Deployment setup
+
+Create the Spekifier project/listing on each distribution service first. In GitHub, open **Settings ? Secrets and variables ? Actions ? New repository secret** and add:
+
+| Destination | Repository secret | Where to obtain it |
+| --- | --- | --- |
+| CurseForge | `CF_API_TOKEN` | [CurseForge author API tokens](https://authors.curseforge.com/#/settings/api-tokens), using an account authorized to upload to the project. This is an author upload token, not a general CurseForge Core API key. |
+| WoWInterface | `WOWI_API_TOKEN` | [WoWInterface API tokens](https://www.wowinterface.com/downloads/filecpl.php?action=apitokens), using the listing owner's account. |
+| Wago | `WAGO_API_TOKEN` | [Wago Addons API keys](https://addons.wago.io/account/apikeys), using an account authorized for the project. |
+| GitHub | None to add | GitHub automatically supplies `GITHUB_TOKEN`; the deployment job grants `contents: write` and passes it as `GITHUB_API_TOKEN`. No personal access token is required. |
+
+The example's `CF_API_KEY` and `GITHUB_OAUTH` environment names are deprecated aliases; this workflow uses the packager's current names. See [packager source](https://github.com/BigWigsMods/packager/blob/master/release.sh) and [GitHub token permissions](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token).
+
+Credentials alone are insufficient: add the actual project IDs to `src/Spekifier.toc` after registering the listings:
+
+```toc
+## X-Curse-Project-ID: <numeric CurseForge project ID>
+## X-WoWI-ID: <numeric WoWInterface listing ID>
+## X-Wago-ID: <Wago project ID>
+```
+
+These IDs are public metadata, not secrets. CurseForge's ID is on the project page, WoWInterface's is the number in its `info<ID>` listing URL, and Wago's is in its developer dashboard. Do not paste the placeholder lines into the manifest. Missing credentials or IDs cause destinations to be skipped. [Packager setup and credential documentation](https://github.com/BigWigsMods/packager)
+
+All jobs use standard Ubuntu runners. This workflow uses Actions artifact storage. Standard runners are free for public repositories; private repositories consume included minutes, and storage/cache allowances still matter. Configure account-level Actions budgets to stop paid usage if needed; workflow YAML cannot enforce the owner's allowance. See [GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions).
+
+Local Lua tests, lint and YAML/package configuration checks do not prove GitHub execution or publication succeeded. Run the pending GitHub checks and complete live WoW acceptance/metadata finalization in [PLAN.md](PLAN.md#manual-acceptance) before publishing a release.

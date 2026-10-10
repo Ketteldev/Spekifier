@@ -9,7 +9,7 @@ function Spekifier:CreateSharedLootRow()
     local strip = { icons = {}, offset = 0, range = 0, width = window:GetWidth() - 120 }
     window.sharedLoot = strip
     strip.frame = CreateFrame("Frame", nil, window)
-    strip.frame:SetPoint("TOPLEFT", window, "TOPLEFT", 20, -90)
+    strip.frame:SetPoint("TOPLEFT", window, "TOPLEFT", 20, -102)
     strip.frame:SetSize(window:GetWidth() - 40, 64)
     strip.label = strip.frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     strip.label:SetPoint("TOPLEFT", strip.frame, "TOPLEFT", 0, -12)
@@ -117,7 +117,7 @@ function Spekifier:RenderSharedLoot(items)
     local step = (window:GetWidth() - 40) / math.max(1, #columns)
     for i, column in ipairs(columns) do
         column.frame:ClearAllPoints()
-        column.frame:SetPoint("TOPLEFT", window, "TOPLEFT", 20 + (i - 1) * step, #items > 0 and -154 or -90)
+        column.frame:SetPoint("TOPLEFT", window, "TOPLEFT", 20 + (i - 1) * step, #items > 0 and -166 or -102)
     end
     if self.LayoutLootWindow then self:LayoutLootWindow() end
     self:FitLootWindow()

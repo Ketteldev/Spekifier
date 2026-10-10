@@ -51,7 +51,8 @@ function Spekifier:UpdateWindowContext(contextKey)
         mainWindow.header:SetText(context.bossName .. "\n" .. (difficulty or ("Difficulty " .. context.difficultyID)))
     else
         mainWindow.header:SetText("Loot comparison preview")
-        mainWindow.status:SetText("Preview: target a living raid boss or enter a Mythic dungeon outside combat. Selection is unavailable. " ..
+        mainWindow.status:SetText("Preview: target a living raid boss or enter a Mythic dungeon " ..
+            "outside combat. Selection is unavailable. " ..
             (resolutionMessages[state.failureReason] or "Encounter information is unavailable. Try again shortly."))
     end
     self:RefreshWindowLoot(context)
@@ -69,7 +70,7 @@ function Spekifier:CreateMainWindow()
     mainWindow.dragArea = CreateFrame("Frame", nil, mainWindow)
     mainWindow.dragArea:SetPoint("TOPLEFT", mainWindow, "TOPLEFT", 8, -2)
     mainWindow.dragArea:SetPoint("TOPRIGHT", mainWindow, "TOPRIGHT", -60, -2)
-    mainWindow.dragArea:SetHeight(22)
+    mainWindow.dragArea:SetHeight(88)
     mainWindow.dragArea:EnableMouse(true)
     mainWindow.dragArea:RegisterForDrag("LeftButton")
     mainWindow.dragArea:SetScript("OnDragStart", function() mainWindow:StartMoving() end)
@@ -98,13 +99,21 @@ function Spekifier:CreateMainWindow()
     end
     if not registered then table.insert(UISpecialFrames, "SpekifierMainWindow") end
     mainWindow.title = mainWindow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    mainWindow.title:SetPoint("TOP", mainWindow.TitleBg, "TOP", 0, -3)
+    mainWindow.title:SetPoint("TOPLEFT", mainWindow, "TOPLEFT", 96, -28)
+    mainWindow.title:SetPoint("TOPRIGHT", mainWindow, "TOPRIGHT", -60, -28)
+    mainWindow.title:SetHeight(22)
+    mainWindow.title:SetJustifyH("LEFT")
     mainWindow.title:SetText("Spekifier")
     if self.CreateOptionsGear then mainWindow.optionsGear = self:CreateOptionsGear(mainWindow) end
+    mainWindow.logo = mainWindow:CreateTexture(nil, "ARTWORK")
+    mainWindow.logo:SetSize(64, 64)
+    mainWindow.logo:SetPoint("TOPLEFT", mainWindow, "TOPLEFT", 20, -26)
+    mainWindow.logo:SetTexture("Interface\\AddOns\\Spekifier\\Media\\logo_64.tga")
     mainWindow.header = mainWindow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    mainWindow.header:SetPoint("TOPLEFT", mainWindow, "TOPLEFT", 20, -32)
-    mainWindow.header:SetPoint("TOPRIGHT", mainWindow, "TOPRIGHT", -20, -32)
-    mainWindow.header:SetHeight(54)
+    mainWindow.header:SetPoint("TOPLEFT", mainWindow, "TOPLEFT", 96, -52)
+    mainWindow.header:SetPoint("TOPRIGHT", mainWindow, "TOPRIGHT", -60, -52)
+    mainWindow.header:SetHeight(38)
+    mainWindow.header:SetJustifyH("LEFT")
     mainWindow.header:SetWordWrap(true)
     mainWindow.status = mainWindow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     mainWindow.status:SetPoint("BOTTOMLEFT", mainWindow, "BOTTOMLEFT", 20, 14)
@@ -119,7 +128,8 @@ function Spekifier:CreateMainWindow()
         if self.WindowSizeLimits then
             local lw, lh, hw, hh = self:WindowSizeLimits()
             mainWindow:SetResizeBounds(lw, lh, hw, hh)
-            mainWindow:SetSize(math.max(lw, math.min(hw, mainWindow:GetWidth())), math.max(lh, math.min(hh, mainWindow:GetHeight())))
+            mainWindow:SetSize(math.max(lw, math.min(hw, mainWindow:GetWidth())), math.max(lh,
+                math.min(hh, mainWindow:GetHeight())))
         end
         self:FitLootWindow()
     end)

@@ -9,7 +9,9 @@ function Spekifier:RefreshColumnAppearance(column)
     local enabled = state.selectionAllowed and state.resolvedContext ~= nil
     local selected = state.resolvedContext ~= nil and state.confirmedSpecID == column.specID
     local hovered = column.frame:IsMouseOver()
-    if column.lastEnabled == enabled and column.lastSelected == selected and column.lastHovered == hovered then return end
+    if column.lastEnabled == enabled and column.lastSelected == selected and column.lastHovered == hovered then
+        return
+    end
     column.lastEnabled, column.lastSelected, column.lastHovered = enabled, selected, hovered
     column.visualState = selected and "selected" or (enabled and "available" or "disabled")
     column.frame.bg:SetColorTexture(selected and 0.12 or 0.08, selected and 0.32 or 0.08,
@@ -54,7 +56,7 @@ function Spekifier:CreateSpecializationColumns()
         if specID then
             local frame = CreateFrame("Button", nil, window)
             frame:SetSize(step - 8, 572)
-            frame:SetPoint("TOPLEFT", window, "TOPLEFT", 20 + (i - 1) * step, -90)
+            frame:SetPoint("TOPLEFT", window, "TOPLEFT", 20 + (i - 1) * step, -102)
             frame:RegisterForClicks("LeftButtonUp")
             frame.bg = frame:CreateTexture(nil, "BACKGROUND")
             frame.bg:SetAllPoints()
@@ -157,7 +159,8 @@ function Spekifier:CreateSpecializationColumns()
         if window.resizeGrip then
             local lw, lh, hw, hh = self:WindowSizeLimits()
             window:SetResizeBounds(lw, lh, hw, hh)
-            window:SetSize(math.max(lw, math.min(hw, window:GetWidth())), math.max(lh, math.min(hh, window:GetHeight())))
+            window:SetSize(math.max(lw, math.min(hw, window:GetWidth())), math.max(lh, math.min(hh,
+                window:GetHeight())))
         end
     end
 end

@@ -8,6 +8,7 @@ Packages src/ as an installable Spekifier addon. Does not run tests.
 param([string]$OutputPath)
 
 $ErrorActionPreference = 'Stop'
+& (Join-Path $PSScriptRoot 'convert-logos.ps1')
 if (-not $OutputPath) {
     $OutputPath = Join-Path $PSScriptRoot '../dist/Spekifier.zip'
 }

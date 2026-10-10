@@ -12,7 +12,7 @@
 
 ## Validation
 
-Run `python spec/run_tests.py` (or `py spec/run_tests.py` on Windows) with `lupa` available for all mocked Lua 5.1 suites, syntax checks, and manifest validation. Use `--package <output.zip>` when preparing a clean-install candidate. Automated checks do not replace live WoW acceptance.
+Run `lua spec/run_tests.lua` (or `lua5.1 spec/run_tests.lua`) with Lua 5.1 and LuaFileSystem installed for all mocked suites, syntax checks, and manifest validation. Run `luacheck src --config .luacheckrc` with Luacheck 1.2.0 for repository-owned static checks. After successful validation, use `lua scripts/package.lua <output.zip>` when preparing a clean-install candidate; platform packagers validate ZIP contents. Automated checks do not replace live WoW acceptance.
 
 ## Root-cause fixes and clarification
 

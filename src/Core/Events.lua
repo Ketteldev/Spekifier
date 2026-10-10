@@ -5,7 +5,7 @@ local addonName, addonTable = ...
 local Spekifier = addonTable.Spekifier
 
 -- Event handler
-local function OnEvent(self, event, ...)
+local function OnEvent(_, event, ...)
     if event == "ADDON_LOADED" then
         local loadedAddon = ...
         if loadedAddon == addonName then

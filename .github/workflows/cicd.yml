@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Lua 5.1 and validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1 lua-filesystem luarocks
+          sudo luarocks --lua-version=5.1 install luacheck 1.2.0-1
+      - name: Check Lua against repository standards
+        run: luacheck src --config .luacheckrc --no-color
+      - name: Run Lua tests, syntax and manifest checks
+        run: lua5.1 spec/run_tests.lua
+
+  test-package:
+    name: Test Package
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    needs:
+      - test
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Create test package
+        uses: BigWigsMods/packager@master
+        with:
+          args: -d
+          pandoc: false
+      - name: Stage test packages
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          cp .release/*.zip artifacts/
+      - name: Upload test packages
+        id: upload-test-packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: Spekifier-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+          path: artifacts/*.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Link test package on pull request
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: actions/github-script@v8
+        env:
+          ARTIFACT_URL: ${{ steps.upload-test-packages.outputs.artifact-url }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const marker = '<!-- spekifier-test-package -->';
+            const body = [
+              marker,
+              '## Spekifier test package',
+              '',
+              `[Download the packaged test ZIPs](${process.env.ARTIFACT_URL})`,
+              '',
+              'This artifact includes packager-fetched dependencies and substitutions. It expires after 14 days.',
+            ].join('\n');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+            });
+            const existingComment = comments.find((comment) => comment.body.includes(marker));
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+  deploy:
+    name: Deployment
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    needs:
+      - test
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Create Package
+        uses: BigWigsMods/packager@master
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WOWINTERFACE_TOKEN: ${{ secrets.WOWINTERFACE_TOKEN }}
+          WAGO_TOKEN: ${{ secrets.WAGO_TOKEN }}

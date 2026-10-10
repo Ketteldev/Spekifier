@@ -1,7 +1,7 @@
 -- Core/Debug.lua
 -- Centralized debug output management
 
-local addonName, addonTable = ...
+local _, addonTable = ...
 local Spekifier = addonTable.Spekifier
 
 -- Debug print function

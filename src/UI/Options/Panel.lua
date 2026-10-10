@@ -46,7 +46,9 @@ end
 
 function Spekifier:InitializeOptions()
     if self.optionsCategory then return true end
-    if not Settings or not Settings.RegisterCanvasLayoutCategory or not Settings.RegisterAddOnCategory then return false end
+    if not Settings or not Settings.RegisterCanvasLayoutCategory or not Settings.RegisterAddOnCategory then
+        return false
+    end
     local panel = self.optionsPanel
     if not panel then
         panel = CreateFrame("Frame")
@@ -59,7 +61,8 @@ function Spekifier:InitializeOptions()
         description:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
         description:SetJustifyH("LEFT")
         description:SetWordWrap(true)
-        description:SetText("Compare loot specializations for supported raids and Mythic+ dungeons.\nMinimap: left-click for preview, right-click for options; drag to reposition.")
+        description:SetText("Compare loot specializations for supported raids and Mythic+ " ..
+            "dungeons.\nMinimap: left-click for preview, right-click for options; drag to reposition.")
         local checkbox = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
         checkbox:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -20)
         local label = checkbox:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -88,7 +91,8 @@ function Spekifier:InitializeOptions()
         explanation:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
         explanation:SetJustifyH("LEFT")
         explanation:SetWordWrap(true)
-        explanation:SetText("Mythic+ controls the end-of-run loot preview on ordinary Mythic and active Mythic+ dungeon entry, including before a key starts.")
+        explanation:SetText("Mythic+ controls the end-of-run loot preview on ordinary Mythic " ..
+            "and active Mythic+ dungeon entry, including before a key starts.")
         panel.autoShowExplanation = explanation
         if self.CreateSkinDropdown then self:CreateSkinDropdown(panel, explanation) end
         panel:SetScript("OnShow", function()

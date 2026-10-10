@@ -1,5 +1,7 @@
 # Phase 10: Lua module structure
 
+
+Current runner (2026-10-10): use `lua spec/run_tests.lua` with Lua 5.1 and LuaFileSystem; package with `lua scripts/package.lua <output.zip>`. Historical Python/Lupa commands below preserve earlier validation evidence. See [current validation instructions](../README.md#validation-and-packaging).
 Layout update (Phase 11): runtime paths in this historical record are now relative to `src/`. Suite commands and links use the relocated `spec/` paths. Earlier candidate descriptions record the packaging at that time; current ZIPs contain only `src/` contents under `Spekifier/`, and acceptance documentation stays in the repository. See [current packaging instructions](../README.md#validation-and-packaging).
 
 The 2026-10-09 refactor separates existing responsibilities without changing the addon feature set, saved-variable schema, supported encounter scope, or confirmed-selection contract. Runtime files grow from 15 to 31; the largest file falls from 468 to 169 lines. Small cohesive modules stay intact. No runtime dependency or module-loader framework is added.

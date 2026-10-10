@@ -41,3 +41,11 @@ luac.out
 
 # Local Python validation environment
 .test-venv/
+
+# Python validation bytecode
+__pycache__/
+*.pyc
+
+# BigWigs packager staging and CI artifacts
+.release/
+artifacts/

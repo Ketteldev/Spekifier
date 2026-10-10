@@ -50,7 +50,7 @@ function S:LayoutLootWindow()
     local w = self:GetMainWindow()
     if not w or not w.resizeGrip then return end
     local shared = w.sharedLoot and w.sharedLoot.items and #w.sharedLoot.items > 0
-    local top = shared and 154 or 90
+    local top = shared and 166 or 102
     local columns = self:GetAllSpecColumns()
     local step = (w:GetWidth() - 40) / math.max(1, #columns)
     local height = math.max(270, w:GetHeight() - top - 58)

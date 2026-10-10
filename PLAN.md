@@ -13,7 +13,19 @@ Entering a supported dungeon on Mythic difficulty also opens the window with the
 - Verify API availability, restrictions, and events against the supported Retail client before implementing integrations. The current interface declaration, `120000`, is not proof of current compatibility.
 - Use focused mocked tests for state transitions, encounter resolution, and delayed data. Verify game APIs and frame interaction inside WoW.
 - Complete implementation and automated validation before closing a phase; every checkbox remaining in a completed phase must be checked.
-- As each phase completes, move its manual/live checks into `## Manual Acceptance`, grouped by source phase, to run after all implementation phases. Preserve confirmed results; deferred checks stay unchecked. Split mixed implementation/manual tasks so neither obligation is lost.
+- As each phase completes, move its manual/live checks into `## Phase 14: Native Lua validation and repository-owned CI standards
+
+Supersedes Phase 13's DBM-derived validation setup under the user's 2026-10-10 instruction. Historical Python/Lupa commands above record validation actually performed at the time; current commands are in [README.md](README.md#validation-and-packaging).
+
+- [x] Remove `spec/run_tests.py` and replace it with [spec/run_tests.lua](spec/run_tests.lua), retaining all eleven suites, Lua 5.1 compilation, exact manifest order/registration checks and suite isolation. Use LuaFileSystem for directory discovery and the existing platform packaging scripts for ZIPs.
+- [x] Replace DBM's remote Luacheck configuration and LuaLS action with standard Luacheck 1.2.0 and a repository-owned [.luacheckrc](.luacheckrc): Lua 5.1 globals, explicit WoW API/addon globals, default warning checks and 120-character lines; unused colon-method receivers are allowed. Resolve existing unused addon-name bindings, line lengths, shadowed restoration variables and empty filtering branches without weakening the checks or changing loot filtering behavior.
+- [x] Run native Lua suites/syntax/manifest validation and Luacheck in CI, with both PR packaging and deployment gated on their success. Update current validation instructions in AGENTS.md, README.md and supporting procedures; preserve historical evidence.
+- [x] Validate all eleven suites using a native Lua 5.1 interpreter; Luacheck 1.2.0 reports zero warnings/errors across all 31 runtime files. Verify runner rejection of unregistered runtime files, invalid syntax, duplicate manifest entries and failing suites, and verify globals/library tables cannot leak between suites. Parse workflow YAML and verify downstream gates.
+- [x] Build `dist/Spekifier-native-lua-candidate.zip` through `lua scripts/package.lua`, exercising the PowerShell packager; independently confirm ZIP integrity, exact `src/` file set and byte equality. Validation tools were downloaded into the ignored `.test-venv/native-lua` directory; they are not repository dependencies or release contents.
+
+Validation (2026-10-10): all local checks above passed. Temporary Python tooling was used to download native tools, parse YAML and independently inspect the ZIP; the committed runner and CI require neither Python nor Lupa. GitHub-hosted execution and WoW are unavailable locally; their remaining obligations are in Manual Acceptance. No new live result or release readiness is claimed.
+
+## Manual Acceptance`, grouped by source phase, to run after all implementation phases. Preserve confirmed results; deferred checks stay unchecked. Split mixed implementation/manual tasks so neither obligation is lost.
 - Keep future implementation in its owning phase. Track release metadata and documentation that depend on live results with final manual release checks.
 
 Live verification update (2026-10-08): The user confirmed completion of all 17 previously unchecked live-validation items in Phases 1 through 6.5. Those items are now checked based on that confirmation. Earlier validation paragraphs and supporting test documents describe the implementation-time status; their pending-live statements are superseded by this update for these items. Applying the Phase 9 skins to shared-item controls is tracked in Phase 9.
@@ -517,6 +529,24 @@ Acceptance checks:
 
 Phase 9 automated validation (2026-10-09): all ten Lua 5.1 suites pass with Lupa 2.8 using `.test-venv/Scripts/python.exe spec/run_tests.py`, totaling 1,522 unique checks (355 new focused skin/resizing checks). Lua syntax and the 15-file manifest dependency order pass. Registry/defaults, preference persistence, hidden/combat switching, lifecycle/data/scroll preservation, reused/new rows, shared overflow, late specialization creation, size limits and 2/3/4-spec geometry on three display sizes are covered. Design, API sources, limitations and full live procedures are in [spec/UI/Skins/SkinsSources.md](spec/UI/Skins/SkinsSources.md). Implementation is complete; live visual acceptance and screenshots remain pending.
 
+### Phase 9 follow-up: New logo placements (2026-10-10)
+
+- [x] Convert the supplied 32x32 and 64x64 PNG logos to uncompressed 32-bit TGA runtime assets in `src/Media/`, preserving every color and alpha pixel; retain PNG sources outside the installed addon and exclude them from BigWigs packaging.
+- [x] Replace the minimap gear and letter overlay with the 32x32 logo, displayed at 24x24 inside the existing 32x32 bordered launcher. Display the 64x64 logo at native size in the loot window's upper left, reserve heading space beside it, and use it for addon metadata. Retain 128x128 artwork as a source for future larger placements.
+- [x] Document asset placement in [README.md](README.md#validation-and-packaging) and run `.test-venv/Scripts/python.exe spec/run_tests.py --package dist/Spekifier-logo-candidate.zip`: all eleven Lua 5.1 suites, syntax, manifest and ZIP checks passed. Independently verified both TGA headers, dimensions, orientation and every BGRA pixel against the supplied PNGs using System.Drawing. Live visual acceptance remains pending below.
+
+
+### Phase 9 follow-up: Transparent logo and padding (2026-10-10)
+
+- [x] Refresh both runtime TGA logos from the user's updated transparent PNGs. The old runtime copies predated the PNG edits, so repackaging alone retained the opaque artwork. Add `scripts/convert-logos.ps1` and invoke it automatically from the PowerShell packager; document the conversion step for Python/Linux packaging and before committing runtime textures.
+- [x] Add 12 pixels below the 64x64 window logo by moving specialization columns and the optional shared-loot row down consistently in initial, shared-row and responsive layouts. Update the shared-row geometry regression expectations.
+- [x] Run all eleven suites, Lua 5.1 syntax, manifest and candidate ZIP checks successfully. Run PowerShell packaging successfully and independently verify every archive entry matches `src/`. Verify both TGA dimensions/orientation/alpha headers, fully transparent pixels and opaque pixels. Live visual acceptance remains pending under Phase 9 below.
+
+### Phase 9 follow-up: Unified left header (2026-10-10)
+
+- [x] Group the transparent 64x64 logo and left-aligned Spekifier title at the upper left, align the encounter/difficulty heading beneath the title, and retain the 12-pixel gap above loot. Hide the former template title background/streaks in both skins, including after skin changes. Extend the drag area over the replacement header while keeping options/close controls outside it.
+- [x] Update appearance documentation and skin-switch regression coverage. All eleven Lua 5.1 suites, syntax, manifest and `dist/Spekifier-logo-candidate.zip` validation passed; the skin suite now passes 415 checks. Live appearance and dragging remain pending below.
+
 ## Phase 10: Reorganize Lua modules by responsibility
 
 User-requested structural refactor (2026-10-09). Preserve established behavior while giving context, data access, lifecycle, rendering, settings, and styling clear file ownership. Historical primary-file references above describe the original implementation; use the [migration map and validation record](spec/StructureSources.md) for current paths.
@@ -571,6 +601,18 @@ Phase 12 API mock signature follow-up (2026-10-09):
 
 - [x] Correct the lifecycle fixture's `UnitName` mock to accept the unit argument used by `src/Core/Events.lua:36`, avoiding zero-argument inference from the test definition.
 - [x] Run all eleven suites (1,566 unique checks), Lua 5.1 syntax and manifest validation successfully. IDE diagnostics remain unavailable for direct verification.
+
+## Phase 13: GitHub Actions tests and releases
+
+- [x] Replace the original workflows with the supplied DBM pipeline in `.github/workflows/cicd.yml`, using `main` for repository branch triggers and removing Discord notification steps.
+- [x] Run upstream Luacheck/LuaLS static checks; after success, package PR ZIPs with 14-day artifact retention and update the download comment for same-repository PRs.
+- [x] Deploy on `main` pushes and all tag pushes through BigWigs' packager, with current credential variable names and explicit GitHub release write permission. Do not create tags automatically; previous semantic tag generation/validation scripts were removed under the user's replacement instruction. Manifest Version remains `12.0.0`.
+- [x] Configure `.pkgmeta` to flatten `src/` into `Spekifier/`, discover the manifest there and exclude repository tooling; document credentials, required project IDs, tag behavior and account-level free-tier limits.
+- [x] Validate replacement workflow YAML/triggers/job gates/token permissions and `.pkgmeta` flattening/exclusion configuration with PyYAML; run all eleven mocked Lua 5.1 suites, syntax, manifest and candidate ZIP checks successfully using `.test-venv/Scripts/python.exe spec/run_tests.py --package dist/Spekifier-actions-candidate.zip` (2026-10-09). Local `bash`, `git`, `luacheck` and LuaLS are unavailable on PATH, so upstream static actions and the actual BigWigs packager have not been executed locally. Their GitHub runs and published packages remain manual acceptance obligations below.
+
+The previous development-PR and merge-release design is superseded by the user's 2026-10-09 request to replicate the DBM example. Automated publishing is configured; project IDs, secrets, upstream checks and live release readiness remain unverified. No credentials or fabricated project IDs have been added.
+
+Workflow schema follow-up (2026-10-09): Removed the copied deployment `strategy.fail-fast` block, which controls matrix jobs but this deployment has no matrix. Parsed `cicd.yml` with PyYAML and verified deployment dependencies and permissions remain intact; full local mocked suites, syntax and manifest checks passed. Updated documentation links after the workflow rename. IDE diagnostics and GitHub execution remain unverified.
 
 ## Manual Acceptance
 
@@ -673,6 +715,10 @@ Follow [the full live procedure and record screenshots/evidence](spec/UI/Skins/S
 - [ ] Capture comparison screenshots of both completed skins and review all interaction and data-loading states for visual consistency and readability: outer frame/title/header, close/gear, spec icons/headers, columns, rows, shared label/icons/overflow, scrollbars and status/confirmation; loading, empty, unsupported, failure, hover, confirmed and disabled states.
 - [ ] Verify resizing in WoW with both skins, 2/3/4 specializations, long localized names, long loot lists and multiple UI scales/resolutions, including minimum dimensions, screen bounds, persistence across close/reopen/reload/login and skin switching. Confirm last row access, fixed headers, shared overflow, separate grip hit area, title dragging, tooltips, scrolling and click selection remain functional without clipping/overlap.
 
+- [ ] New logos: clean-install [the logo candidate](dist/Spekifier-logo-candidate.zip), restart WoW to load new texture files, and verify the minimap logo's transparency, border, hover, left/right click and dragging. Open the loot preview in both Original and Elles skins at minimum/default window sizes; confirm the upper-left logo is 64x64, has a transparent background, and has a 12-pixel gap above the first spec rectangle or shared-loot row; confirm it does not overlap raid/dungeon headings. Updated transparent assets and padding were automated-validated on 2026-10-10; live verification of these changes remains pending. Check the addon metadata icon in the AddOns list. Record client/build and visual results here; automated validation does not establish this result.
+
+- [ ] Unified left header: install the current logo candidate and check both skins at minimum/default sizes. Confirm the logo/title read as one left-aligned group, encounter and difficulty remain readable, the old centered title bar is absent, the 12-pixel loot gap remains, and header dragging, options and closing work. Record client/build and visual results here.
+
 ### Phase 10: Lua structure refactor
 
 Follow [the clean-install and live regression procedure](spec/StructureSources.md#manual-procedure-pending). These checks require the WoW client and remain unchecked until performed or explicitly confirmed.
@@ -683,6 +729,19 @@ Follow [the clean-install and live regression procedure](spec/StructureSources.m
 ### Phase 11: Source/spec release layout
 
 - [ ] Extract `dist/Spekifier-candidate.zip` into a clean `Interface/AddOns` directory and confirm `Spekifier/Spekifier.toc` is directly inside the addon folder. Login/reload without missing-file or Lua errors and run the primary boss-target-to-loot-selection workflow in [the integration procedure](spec/IntegrationSources.md). Record client/build/results there; this may be combined with final integration and Phase 10 clean-install acceptance using the newest candidate.
+
+### Phase 13: GitHub automation
+
+Follow [workflow behavior and deployment setup](README.md#github-automation). These checks require GitHub execution and remain pending.
+
+- [ ] Configure account-level budgets as needed to prevent paid Actions minutes/storage/cache usage.
+- [ ] Register distribution projects, set the three actual public project IDs in `src/Spekifier.toc`, and store `CF_API_TOKEN`, `WOWI_API_TOKEN`, and `WAGO_API_TOKEN` in repository secrets. Confirm GitHub deployment has `contents: write` permission.
+- [ ] Open/update/reopen a PR against `main`; verify repository-owned Luacheck and Lua suite/syntax/manifest checks, installable ZIP artifact with 14-day retention and updated same-repository download comment. Confirm fork PRs skip commenting and PRs never deploy.
+- [ ] After live release acceptance and metadata finalization, verify untagged `main` push packaging/alpha uploads, then push a release tag such as `v12.0.0`; verify intended CurseForge, GitHub Release, WoWInterface and Wago uploads, changelog and clean installable ZIP. Record evidence and failures.
+
+### Phase 14: Native Lua validation
+
+- [ ] Run the updated workflow on GitHub and confirm Lua 5.1/LuaFileSystem/Luacheck installation and both validation steps pass before packaging. Record evidence alongside the [Phase 13 automation checks](#phase-13-github-automation); use [the current candidate](README.md#validation-and-packaging) for the outstanding clean-install and in-game regression procedures.
 
 ## Definition of Done
 

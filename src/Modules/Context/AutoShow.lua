@@ -1,5 +1,5 @@
 -- Automatic opening requires a verified encounter or dungeon context.
-local addonName, addonTable = ...
+local _, addonTable = ...
 local Spekifier = addonTable.Spekifier
 local autoShowState = { inRaidInstance = false, targetingBoss = false, inCombat = false }
 local targetGeneration, visitGeneration = 1, 0
@@ -101,7 +101,8 @@ function Spekifier:RefreshAutoShow(event, allowOpening)
     if context then context.contextKey = autoShowState.contextKey end
     autoShowState.preferenceKey = eligibleDungeon and "autoShowMythicPlus" or
         (inRaidInstance and raidPreferences[difficultyID] or nil)
-    autoShowState.preferenceEnabled = not not (autoShowState.preferenceKey and self:GetSetting(autoShowState.preferenceKey))
+    autoShowState.preferenceEnabled = not not
+        (autoShowState.preferenceKey and self:GetSetting(autoShowState.preferenceKey))
     autoShowState.autoShowPermission = not not (self:GetSetting("enabled") and autoShowState.preferenceEnabled)
     autoShowState.shouldAutoShow = not not (autoShowState.autoShowPermission and
         autoShowState.contextKey and not inCombat)

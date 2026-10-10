@@ -36,9 +36,9 @@ for _, count in ipairs({ 2, 3, 4 }) do
             original[2].itemID == 10 and original[3].itemID == 90, "source array/order/duplicates intact")
         for i, c in ipairs(a:GetAllSpecColumns()) do
             expect(shownIDs(c) == tostring(i), "universal loot removed from every column")
-            expect(c.frame.point[5] == -154 and c.scroll.height == 420, "strip keeps fixed full column viewports")
+            expect(c.frame.point[5] == -166 and c.scroll.height == 420, "strip keeps fixed full column viewports")
         end
-        expect(strip.frame.point[5] == -90 and strip.label.text == "Shared:" and
+        expect(strip.frame.point[5] == -102 and strip.label.text == "Shared:" and
             strip.icons[1].name == nil and strip.icons[2].point[4] == 48, "icon-only horizontal strip beneath header")
         expect(w.height == 784 and w.width*w.scale <= size[1]-40+0.00001 and
             w.height*w.scale <= size[2]-40+0.00001, "shared layout fits UI dimensions")
@@ -46,7 +46,7 @@ for _, count in ipairs({ 2, 3, 4 }) do
         expect(strip.icons[1].item.itemID == 10, "equivalent refreshed ordering stable")
         local empty = {}; for i=1,count do empty[i]={} end
         a:RenderWindowLoot(pool(a, empty))
-        expect(not strip.frame:IsShown() and w.height == 720 and a:GetSpecColumn(1).frame.point[5] == -90,
+        expect(not strip.frame:IsShown() and w.height == 720 and a:GetSpecColumn(1).frame.point[5] == -102,
             "no-shared layout reclaims all strip space")
         expect(strip.icons[1].item == nil and strip.icons[1].icon.texture == nil,
             "obsolete shared icon bindings removed")

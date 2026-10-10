@@ -81,13 +81,12 @@ function Provider:Query(r, specID)
             if not info or not info.itemID then
                 pending, metadataOnly = true, false
                 completeness.missingRows = completeness.missingRows + 1
-            elseif c.kind == "dungeon" and info.displayAsPerPlayerLoot then
-                -- Blizzard categorizes these as bonus loot (e.g. recipes),
-                -- rather than the shared specialization-dependent boss pool.
-            elseif info.displaySeasonID and C_SeasonInfo and C_SeasonInfo.GetCurrentDisplaySeasonID and
-                info.displaySeasonID ~= C_SeasonInfo.GetCurrentDisplaySeasonID() then
-                -- Match Blizzard's seasonal loot visibility rule.
-            elseif not seen[info.itemID] then
+            -- Exclude bonus dungeon loot and out-of-season items using
+            -- Blizzard's shared boss-pool and seasonal visibility rules.
+            elseif not (c.kind == "dungeon" and info.displayAsPerPlayerLoot) and
+                not (info.displaySeasonID and C_SeasonInfo and C_SeasonInfo.GetCurrentDisplaySeasonID and
+                    info.displaySeasonID ~= C_SeasonInfo.GetCurrentDisplaySeasonID()) and
+                not seen[info.itemID] then
                 seen[info.itemID] = true
                 local item = Copy(info)
                 if not CompleteItem(item) then
@@ -126,9 +125,9 @@ function Provider:Query(r, specID)
     Restore(EJ_SetLootFilter, old.classID, old.specID)
     Restore(C_EncounterJournal.SetSlotFilter, old.slot)
     local verified, matches = pcall(function()
-        local classID, specID = EJ_GetLootFilter()
+        local classID, restoredSpecID = EJ_GetLootFilter()
         return EJ_GetDifficulty() == old.difficulty and classID == old.classID and
-            specID == old.specID and C_EncounterJournal.GetSlotFilter() == old.slot
+            restoredSpecID == old.specID and C_EncounterJournal.GetSlotFilter() == old.slot
     end)
     if not restored or not verified or not matches then
         return { state = "failed", reason = "journal-restore-failed", items = {} }

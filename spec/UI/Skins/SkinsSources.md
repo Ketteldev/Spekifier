@@ -1,5 +1,7 @@
 # Phase 9 appearance specification
 
+
+Current runner (2026-10-10): use `lua spec/run_tests.lua` with Lua 5.1 and LuaFileSystem; package with `lua scripts/package.lua <output.zip>`. Historical Python/Lupa commands below preserve earlier validation evidence. See [current validation instructions](../../../README.md#validation-and-packaging).
 Design recorded before implementation (2026-10-09). References: https://ellesmereui.com/presets and https://github.com/EllesmereGaming/EllesmereUI/blob/main/EllesmereUI.lua and https://github.com/tukui-org/ElvUI . Built-in treatment; no external media dependency.
 
 Original retains Blizzard template chrome, Friz Quadrata typography, gold hover/scroll accents and green confirmation. Elles uses opaque charcoal (#11151c), slate one-unit borders (#394354), pale text (#e0e6ef), cyan accents (#45bfd9), and teal confirmation (#184a43). Disabled columns have muted backgrounds and explicit labels. Quality colors remain untouched. Preserve 20-unit margins, 8-unit gutters, 64-unit rows, 56-unit spec icons and 40-unit loot icons. Names remain outside scrolling content. Grip has its own 24-unit corner. Client fonts retain localized glyph support.

@@ -1,0 +1,16 @@
+package-as: Spekifier
+
+# Move runtime contents into the addon root after copying tracked files.
+move-folders:
+  Spekifier/src: Spekifier
+
+ignore:
+  - .luacheckrc
+  - AGENTS.md
+  - PLAN.md
+  - README.md
+  - scripts
+  - spec
+  - dist
+  - artifacts
+  - assets

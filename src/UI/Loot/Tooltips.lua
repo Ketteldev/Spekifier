@@ -30,4 +30,5 @@ local function ShowItemTooltip(row)
 end
 
 
-addonTable.LootUI = { HideTooltip = HideTooltip, ShowItemTooltip = ShowItemTooltip, ReadableFont = ReadableFont, rowHeight = 64, listHeight = 420 }
+addonTable.LootUI = { HideTooltip = HideTooltip, ShowItemTooltip = ShowItemTooltip,
+    ReadableFont = ReadableFont, rowHeight = 64, listHeight = 420 }

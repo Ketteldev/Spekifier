@@ -78,7 +78,10 @@ function Spekifier:RenderWindowLoot(result)
     end
     if state.resolvedContext then
         local text = result and (messages[result.state] or "") or messages.loading
-        if result and result.state == "ready" then text = state.selectionAllowed and "Hover items for details. Click a specialization to select it." or "Loot specialization information is unavailable." end
+        if result and result.state == "ready" then
+            text = state.selectionAllowed and "Hover items for details. Click a specialization to select it." or
+                "Loot specialization information is unavailable."
+        end
         if state.selectionNotice then text = state.selectionNotice end
         window.status:SetText(text or "Loot comparison")
     end

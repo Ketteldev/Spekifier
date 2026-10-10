@@ -4,11 +4,11 @@ Layout update (Phase 11): runtime paths in this historical record are now relati
 
 ## Automated validation
 
-Run each Lua suite with Lua 5.1 from the repository root, or run `python spec/run_tests.py` with `lupa` installed. The runner uses isolated Lua runtimes, compiles every Lua source, and verifies the exact final manifest order and that every runtime file is registered. Eight suites provide 850 unique checks; lifecycle checks repeated by dependent suites are counted once.
+Run each Lua suite with Lua 5.1 from the repository root, or run `lua spec/run_tests.lua` with Lua 5.1 and LuaFileSystem installed. The runner uses isolated Lua suite environments, compiles every Lua source, and verifies the exact final manifest order and that every runtime file is registered. Eight suites provide 850 unique checks; lifecycle checks repeated by dependent suites are counted once.
 
 `spec/Integration.lua` adds 19 checks for confirmed loot-spec debug reporting: explicit selection, Current Specialization and active-spec changes, getter errors, invalid IDs, combat, and dismissed-window/frame stability. Existing suites cover fresh/legacy settings, raid and dungeon rejection/lifecycle, multi-boss resolution, stale provider callbacks, delayed data, pooled UI frames, selection confirmation/failure, options and minimap behavior.
 
-`python spec/run_tests.py --package Spekifier-phase7-candidate.zip` builds a clean-folder candidate only after all checks pass. Its top-level folder is `Spekifier`; it contains the manifest, all 14 runtime Lua files, README and supporting acceptance/source documents. No repository metadata, saved variables, development scripts or test harness is included. The runner checks archive integrity, exact contents and byte equality. This verifies packaging, not installation in WoW.
+`lua spec/run_tests.lua` followed by `lua scripts/package.lua Spekifier-phase7-candidate.zip` builds a clean-folder candidate only after all checks pass. Its top-level folder is `Spekifier`; it contains the manifest, all 14 runtime Lua files, README and supporting acceptance/source documents. No repository metadata, saved variables, development scripts or test harness is included. The platform packager checks archive integrity and contents. This verifies packaging, not installation in WoW.
 
 ## Live acceptance record
 

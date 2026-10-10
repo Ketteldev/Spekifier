@@ -50,10 +50,18 @@ function S:ApplyWindowSkin()
     surface(w, p)
     w.skinBackground:SetShown(elles)
     for _, edge in ipairs(w.skinEdges) do edge:SetShown(elles) end
-    for _, name in ipairs({ "Bg", "TitleBg", "TopBorder", "BottomBorder", "LeftBorder", "RightBorder", "TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner", "BotLeftCorner", "BotRightCorner", "TopTileStreaks", "Inset", "InsetBg", "InsetBorderTopLeft", "InsetBorderTopRight", "InsetBorderBottomLeft", "InsetBorderBottomRight", "InsetBorderTop", "InsetBorderBottom", "InsetBorderLeft", "InsetBorderRight", "NineSlice" }) do
+    for _, name in ipairs({ "Bg", "TopBorder", "BottomBorder", "LeftBorder", "RightBorder",
+        "TopLeftCorner", "TopRightCorner", "BottomLeftCorner", "BottomRightCorner", "BotLeftCorner",
+        "BotRightCorner", "Inset", "InsetBg", "InsetBorderTopLeft", "InsetBorderTopRight",
+        "InsetBorderBottomLeft", "InsetBorderBottomRight", "InsetBorderTop", "InsetBorderBottom",
+        "InsetBorderLeft", "InsetBorderRight", "NineSlice" }) do
         if w[name] then w[name]:SetAlpha(elles and 0 or 1) end
     end
-    text(w.title, p, 14); text(w.header, p, 18); text(w.status, p, 14)
+    -- The logo/title header replaces the template title bar in every skin.
+    for _, name in ipairs({ "TitleBg", "TopTileStreaks", "TitleText" }) do
+        if w[name] then w[name]:SetAlpha(0) end
+    end
+    text(w.title, p, 22); text(w.header, p, 18); text(w.status, p, 14)
     if w.CloseButton then
         for _, getter in ipairs({ "GetNormalTexture", "GetPushedTexture" }) do
             local texture = w.CloseButton[getter] and w.CloseButton[getter](w.CloseButton)

@@ -8,7 +8,7 @@ Existing Settings canvas registration, UICheckButtonTemplate, options entry poin
 
 ## Automated evidence
 
-Run `python spec/run_tests.py` with Lupa (Lua 5.1). AutoShowPreferences uses production options/database/lifecycle/commands with the shared mocked fixture. It covers all mapped IDs, parent/child truth tables and independent categories, immediate closing, manual preview/combat, consumed visits, raid dismissal, retargeting, exit/re-entry, deferred visits, upgrades/mixed false values/new login, checkbox routing and debug output. Existing lifecycle, loot, selection, launcher and integration suites remain required. The old dungeon-to-raid test now supplies actual raid difficulty 14 rather than retaining dungeon difficulty 8.
+Run `lua spec/run_tests.lua` with Lua 5.1 and LuaFileSystem. AutoShowPreferences uses production options/database/lifecycle/commands with the shared mocked fixture. It covers all mapped IDs, parent/child truth tables and independent categories, immediate closing, manual preview/combat, consumed visits, raid dismissal, retargeting, exit/re-entry, deferred visits, upgrades/mixed false values/new login, checkbox routing and debug output. Existing lifecycle, loot, selection, launcher and integration suites remain required. The old dungeon-to-raid test now supplies actual raid difficulty 14 rather than retaining dungeon difficulty 8.
 
 Automated run on 2026-10-09: all nine suites, Lua 5.1 syntax and 14-file manifest validation passed (1,167 unique checks; 317 new preference checks), using the ignored local `.test-venv` with Lupa 2.8.
 

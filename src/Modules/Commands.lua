@@ -1,7 +1,7 @@
 -- Modules/Commands.lua
 -- Slash command registration and handling
 
-local addonName, addonTable = ...
+local _, addonTable = ...
 local Spekifier = addonTable.Spekifier
 
 -- Prefer window results; a dismissed preview can query the current context.
@@ -110,7 +110,8 @@ local function HandleSlashCommand(msg)
         print("  Difficulty Preference Enabled: " .. tostring(state.preferenceEnabled))
         print("  Effective Auto-Show Permission: " .. tostring(state.autoShowPermission))
         print("  Should Auto-Show: " .. tostring(state.shouldAutoShow))
-        print("  Preview Window Shown: " .. tostring(not not (Spekifier:GetMainWindow() and Spekifier:GetMainWindow():IsShown())))
+        print("  Preview Window Shown: " ..
+            tostring(not not (Spekifier:GetMainWindow() and Spekifier:GetMainWindow():IsShown())))
         print("  Opening Reason: " .. tostring(windowState.openingReason))
         print("  Context: " .. tostring(windowState.contextKey))
         print("  Dismissed Context: " .. tostring(windowState.dismissedContextKey))
