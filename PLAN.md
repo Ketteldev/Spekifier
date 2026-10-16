@@ -13,7 +13,15 @@ Entering a supported dungeon on Mythic difficulty also opens the window with the
 - Verify API availability, restrictions, and events against the supported Retail client before implementing integrations. The current interface declaration, `120000`, is not proof of current compatibility.
 - Use focused mocked tests for state transitions, encounter resolution, and delayed data. Verify game APIs and frame interaction inside WoW.
 - Complete implementation and automated validation before closing a phase; every checkbox remaining in a completed phase must be checked.
-- As each phase completes, move its manual/live checks into `## Manual Acceptance`, grouped by source phase, to run after all implementation phases. Preserve confirmed results; deferred checks stay unchecked. Split mixed implementation/manual tasks so neither obligation is lost.
+- As each phase completes, move its manual/live checks into `### Phase 13 packaging correction (2026-10-16)
+
+- [x] Remove GitHub's extra artifact ZIP wrapper using upload-artifact v7's documented single-file archive: false input; upload the exact validated BigWigs ZIP rather than a wildcard collection.
+- [x] Validate the actual PR ZIP before upload: require Spekifier/Spekifier.toc and every manifest file; reject extra roots, nested Spekifier/src folders, nested ZIPs, unsafe paths and duplicate file entries. Update README and PR download instructions.
+- [x] Run all eleven native Lua 5.1 suites, syntax/manifest checks and Luacheck 1.2.0 (zero warnings/errors across 30 files). Build dist/Spekifier-pr-package-candidate.zip with the Lua launcher; validate its 33 files. Exercise rejection of nested ZIP, nested addon folder, extra root, nested src and missing manifest-file fixtures.
+
+Cause: the workflow uploaded ZIPs with GitHub's default archive wrapping. Existing .pkgmeta already moves runtime contents into one addon root; no evidence establishes that it creates a second addon folder. An extractor's enclosing-folder option can add another directory. The actual BigWigs run and new direct artifact download still require GitHub verification; local packaging does not establish that result. See the outstanding Phase 13 checks below. Upstream references: [single-file upload](https://github.com/actions/upload-artifact/tree/v7#upload-an-individual-file-unzipped), [packager move implementation](https://github.com/BigWigsMods/packager/blob/master/release.sh).
+
+## Manual Acceptance`, grouped by source phase, to run after all implementation phases. Preserve confirmed results; deferred checks stay unchecked. Split mixed implementation/manual tasks so neither obligation is lost.
 - Keep future implementation in its owning phase. Track release metadata and documentation that depend on live results with final manual release checks.
 
 Live verification update (2026-10-08): The user confirmed completion of all 17 previously unchecked live-validation items in Phases 1 through 6.5. Those items are now checked based on that confirmation. Earlier validation paragraphs and supporting test documents describe the implementation-time status; their pending-live statements are superseded by this update for these items. Applying the Phase 9 skins to shared-item controls is tracked in Phase 9.
@@ -659,6 +667,14 @@ Validation (2026-10-10): packager documentation/source confirms token names and 
 
 
 Addon-description documentation (2026-10-11): maintain [descriptions/CURSE_WAGO.md](descriptions/CURSE_WAGO.md) as the single copy-ready Markdown description for CurseForge and Wago, whose descriptions are identical, and [descriptions/WOWINTERFACE.md](descriptions/WOWINTERFACE.md) as the equivalent BBCode description. Separate CURSEFORGE.md and WAGO.md files and the descriptions README are removed per user preference; do not recreate them. Research reviewed Details!/DBM on CurseForge and indexed Plater content on Wago, with the MDT author README as a supporting layout reference; direct Wago pages were partly inaccessible. Copy was checked against the repository README and these documents are excluded from packaging. Authenticated site previews are unperformed. This update only changes documentation and description organization; no runtime validation is claimed. Phase 15 and outstanding release acceptance remain incomplete.
+
+### Phase 13 packaging correction (2026-10-16)
+
+- [x] Remove GitHub's extra artifact ZIP wrapper using upload-artifact v7's documented single-file archive: false input; upload the exact validated BigWigs ZIP rather than a wildcard collection.
+- [x] Validate the actual PR ZIP before upload: require Spekifier/Spekifier.toc and every manifest file; reject extra roots, nested Spekifier/src folders, nested ZIPs, unsafe paths and duplicate file entries. Update README and PR download instructions.
+- [x] Run all eleven native Lua 5.1 suites, syntax/manifest checks and Luacheck 1.2.0 (zero warnings/errors across 30 files). Build dist/Spekifier-pr-package-candidate.zip with the Lua launcher; validate its 33 files. Exercise rejection of nested ZIP, nested addon folder, extra root, nested src and missing manifest-file fixtures.
+
+Cause: the workflow uploaded ZIPs with GitHub's default archive wrapping. Existing .pkgmeta already moves runtime contents into one addon root; no evidence establishes that it creates a second addon folder. An extractor's enclosing-folder option can add another directory. The actual BigWigs run and new direct artifact download still require GitHub verification; local packaging does not establish that result. See the outstanding Phase 13 checks below. Upstream references: [single-file upload](https://github.com/actions/upload-artifact/tree/v7#upload-an-individual-file-unzipped), [packager move implementation](https://github.com/BigWigsMods/packager/blob/master/release.sh).
 
 ## Manual Acceptance
 
