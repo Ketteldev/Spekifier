@@ -110,15 +110,81 @@ function Spekifier:RenderSharedLoot(items)
         local textColor = self:GetWindowPalette().text
         strip.label:SetTextColor(textColor[1], textColor[2], textColor[3], textColor[4])
     end
-    strip.frame:SetShown(#items > 0)
+    local visible = #items > 0 or strip.pickerShown
+    strip.frame:SetShown(not not visible)
     -- Retain the full column viewport, reclaiming all strip space when absent.
-    if not self.LayoutLootWindow then window:SetHeight(#items > 0 and 784 or 720) end
+    if not self.LayoutLootWindow then window:SetHeight(visible and 784 or 720) end
     local columns = self:GetAllSpecColumns()
     local step = (window:GetWidth() - 40) / math.max(1, #columns)
     for i, column in ipairs(columns) do
         column.frame:ClearAllPoints()
-        column.frame:SetPoint("TOPLEFT", window, "TOPLEFT", 20 + (i - 1) * step, #items > 0 and -166 or -102)
+        column.frame:SetPoint("TOPLEFT", window, "TOPLEFT", 20 + (i - 1) * step, visible and -166 or -102)
     end
     if self.LayoutLootWindow then self:LayoutLootWindow() end
     self:FitLootWindow()
+end
+
+-- The encounter picker shares the strip even while loot is pending or empty.
+function Spekifier:RefreshEncounterDropdown(context)
+    local window = self:GetMainWindow()
+    local raid = context and context.kind == "raid"
+    local picker = window.encounterPicker
+    if raid and not picker then
+        local strip = self:CreateSharedLootRow()
+        picker = CreateFrame("Frame", nil, strip.frame)
+        window.encounterPicker = picker
+        picker:SetPoint("TOPRIGHT", strip.frame, "TOPRIGHT", 0, 0)
+        picker:SetSize(340, 44)
+        picker:SetScript("OnHide", function()
+            if CloseDropDownMenus then CloseDropDownMenus(1, picker.dropdown) end
+        end)
+        picker.label = picker:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        picker.label:SetPoint("TOPLEFT", picker, "TOPLEFT", 0, -12)
+        picker.label:SetText("Encounter:")
+        picker.dropdown = CreateFrame("Frame", "SpekifierEncounterDropdown", picker, "UIDropDownMenuTemplate")
+        picker.dropdown:SetPoint("TOPLEFT", picker, "TOPLEFT", 68, 0)
+        UIDropDownMenu_SetWidth(picker.dropdown, 220)
+        UIDropDownMenu_Initialize(picker.dropdown, function(_, level)
+            local current = self:GetWindowState().resolvedContext
+            if InCombatLockdown() or not current or current.kind ~= "raid" then return end
+            for _, entry in ipairs(current.encounters) do
+                local id, owner = entry.id, current.contextKey
+                local info = UIDropDownMenu_CreateInfo()
+                info.text, info.value, info.checked = entry.name, id, current.encounterID == id
+                info.func = function()
+                    -- Ignore a menu callback from a superseded raid/difficulty/context.
+                    if self:GetWindowState().contextKey == owner then self:SelectRaidEncounter(id) end
+                end
+                UIDropDownMenu_AddButton(info, level)
+            end
+        end)
+    end
+    if picker then
+        picker:SetShown(not not raid)
+        if raid then UIDropDownMenu_SetText(picker.dropdown, context.bossName) end
+        if self.GetWindowPalette then
+            local c = self:GetWindowPalette().text
+            picker.label:SetTextColor(c[1], c[2], c[3], c[4])
+        end
+    end
+    if window.sharedLoot then
+        window.sharedLoot.pickerShown = not not raid
+        self:LayoutSharedLootRow()
+    end
+end
+
+function Spekifier:LayoutSharedLootRow()
+    local window = self:GetMainWindow()
+    local strip = window.sharedLoot
+    if not strip then return end
+    strip.width = math.max(48, window:GetWidth() - 120 - (strip.pickerShown and 352 or 0))
+    strip.frame:SetWidth(window:GetWidth() - 40)
+    strip.scroll:SetWidth(strip.width)
+    strip.bar:SetWidth(strip.width)
+    local width = math.max(strip.width, #(strip.items or {}) * 48 - 8)
+    strip.content:SetWidth(width)
+    strip.range = math.max(0, width - strip.width)
+    strip.bar:SetMinMaxValues(0, strip.range)
+    strip.bar:SetShown(strip.range > 0)
+    strip:SetOffset(strip.offset)
 end

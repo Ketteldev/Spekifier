@@ -18,7 +18,7 @@ for _, category in ipairs(categories) do
         a:SetAutoShowPreference(key, false)
         expect(not w:IsShown() and not a:GetAutoShowState().autoShowPermission, "child closes immediately " .. id)
         a:SetAutoShowPreference(key, true)
-        expect(w:IsShown() == (kind == "raid"), "consumed dungeon stays closed " .. id)
+        expect(not w:IsShown(), "consumed raid/dungeon prompt stays closed " .. id)
         a:SetAutoShowPreference("enabled", false)
         expect(not w:IsShown(), "parent closes " .. id)
         for _, other in ipairs(categories) do
@@ -57,7 +57,10 @@ for _, category in ipairs(categories) do
     expect(not a:GetMainWindow():IsShown() and a:GetWindowState().dismissedContextKey == dismissed, "dismissal preserved")
     if kind == "raid" then
         event("PLAYER_TARGET_CHANGED")
-        expect(a:GetMainWindow():IsShown(), "new target allows prompt")
+        expect(not a:GetMainWindow():IsShown(), "retarget preserves raid dismissal")
+        s.inInstance = false; event("ZONE_CHANGED_NEW_AREA")
+        s.inInstance = true; event("ZONE_CHANGED_NEW_AREA")
+        expect(a:GetMainWindow():IsShown(), "new raid visit allows prompt")
     else
         s.inInstance = false; event("ZONE_CHANGED_NEW_AREA")
         s.inInstance = true; event("ZONE_CHANGED_NEW_AREA")
@@ -94,7 +97,7 @@ for _, id in ipairs({8, 23}) do
     s.combat = false; event("PLAYER_REGEN_ENABLED")
     expect(a:GetMainWindow():IsShown(), "enabled deferred visit opens")
 end
-for _, overrides in ipairs({{instanceType="party", difficultyID=1}, {instanceType="party", difficultyID=2}, {npcID=999}, {dead=true}, {inInstance=false}}) do
+for _, overrides in ipairs({{instanceType="party", difficultyID=1}, {instanceType="party", difficultyID=2}, {journalEncounters={}}, {noJournal=true}, {inInstance=false}}) do
     overrides.discovery = true
     local a = fixture(overrides)
     a:SetAutoShowPreference("enabled", false); a:SetAutoShowPreference("enabled", true)

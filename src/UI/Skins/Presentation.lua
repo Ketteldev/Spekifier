@@ -57,8 +57,10 @@ function S:ApplyWindowSkin()
         "InsetBorderLeft", "InsetBorderRight", "NineSlice" }) do
         if w[name] then w[name]:SetAlpha(elles and 0 or 1) end
     end
-    -- The logo/title header replaces the template title bar in every skin.
-    for _, name in ipairs({ "TitleBg", "TopTileStreaks", "TitleText" }) do
+    -- Original needs the template fill inside its retained title-area outline.
+    if w.TitleBg then w.TitleBg:SetAlpha(elles and 0 or 1) end
+    -- The logo/title header replaces the old text and decorative streaks.
+    for _, name in ipairs({ "TopTileStreaks", "TitleText" }) do
         if w[name] then w[name]:SetAlpha(0) end
     end
     text(w.title, p, 22); text(w.header, p, 18); text(w.status, p, 14)
@@ -75,15 +77,13 @@ function S:ApplyWindowSkin()
         w.CloseButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     end
     if w.optionsGear then surface(w.optionsGear, p) end
-    if w.resizeGrip then
-        for _, line in ipairs(w.resizeGrip.lines) do color(line, p.accent) end
-    end
     for _, c in ipairs(self:GetAllSpecColumns()) do
         surface(c.frame, p); text(c.frame.name, p, 22); text(c.message, p, 14); text(c.marker, p, 12)
         color(c.hover, p.accent); self:StyleScrollbar(c.bar)
         for _, row in ipairs(c.rows) do self:StyleLootElement(row) end
         c.lastEnabled = nil; self:RefreshColumnAppearance(c)
     end
+    if w.encounterPicker then text(w.encounterPicker.label, p, 14) end
     if w.sharedLoot then
         text(w.sharedLoot.label, p, 14); self:StyleScrollbar(w.sharedLoot.bar)
         for _, icon in ipairs(w.sharedLoot.icons) do self:StyleLootElement(icon, true) end

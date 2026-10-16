@@ -2,7 +2,7 @@
 
 **Compare loot across your specializations and choose your loot spec before the fight.**
 
-Spekifier is a World of Warcraft Retail addon that puts your class's loot options side by side. Target a supported raid boss or enter a supported Mythic dungeon to see what each spekialization can receive, then click a column to set your loot spekialization.
+Spekifier is a World of Warcraft Retail addon that puts your class's loot options side by side. Enter a supported raid and choose an encounter, or enter a supported Mythic dungeon, to see what each spekialization can receive, then click a column to set your loot spekialization.
 
 The aim is simple: make it easier to choose which spek to collect gear for before rewards are decided, with fewer trips through the Adventure Guide and loot specialization menu.
 
@@ -11,34 +11,34 @@ The aim is simple: make it easier to choose which spek to collect gear for befor
 - **Loot at a glance:** one column per specialization, with item icons, names, and native item and equipped-item comparison tooltips.
 - **Focus on the differences:** items available to every spec appear once in a shared row above the columns.
 - **Click to choose:** select a loot specialization directly from its column, with confirmation from the game.
-- **Timely reminders:** automatic previews for supported raid targets and Mythic dungeon entry, with separate controls for each content type.
+- **Timely reminders:** automatic previews for supported raid and Mythic dungeon entry, with separate controls for each content type.
 - **Make it fit your UI:** two built-in skins, a movable and resizable window, and a draggable minimap launcher.
 
 ## How to use it
 
-1. **Open a comparison.** Outside combat, target a supported living raid boss inside its raid, or enter a supported dungeon on Mythic difficulty. The window opens automatically with default settings. You can also left-click the minimap button or use `/spek toggle`.
+1. **Open a comparison.** Outside combat, enter a supported raid or a supported dungeon on Mythic difficulty. The window opens automatically with default settings. For raids, choose the boss from **Encounter:** on the right of the **Shared:** row; the header shows the raid and actual difficulty. You can also left-click the minimap button or use `/spek toggle`.
 2. **Compare your options.** Each column shows loot eligible for that specialization. Hover items for tooltips and scroll each column independently. Items eligible for every spec appear under **Shared:**; scroll that strip horizontally when needed.
 3. **Choose your loot spec.** Click a specialization's header, column background, or item row. Once the game confirms the change, the window closes and chat reports `Spekifier has set your loot specialization to [SPEC].`
 
 Hovering only highlights a column. Shared-item icons show tooltips without choosing a spec. The **Selected** marker reflects your current game-confirmed loot specialization; an explicit choice changes your loot spec, not your active combat spec.
 
-Close the window with **Escape** or its close button. It also closes when combat starts, and cannot be opened during combat. A dismissed raid prompt stays dismissed while the same boss remains continuously targeted; clearing/changing your target or ending combat permits a fresh prompt. Dungeon prompts appear once per visit, with another opportunity after leaving and re-entering. You can manually reopen the preview outside combat.
+Close the window with **Escape** or its close button. It also closes when combat starts, and cannot be opened during combat. A dismissed raid prompt stays dismissed through target changes. The raid window opens automatically only once per visit, on entry. Boss kills, wipes, ordinary enemies, minibosses, difficulty changes and preference toggles do not rearm a displayed prompt. Reopen it manually to choose another encounter. An entry prompt not yet shown may still appear after combat. Leaving and re-entering starts a new raid visit. The first Journal encounter is selected initially, so choose the encounter you are about to fight, including when joining an LFR wing in progress. Encounter selection changes the comparison; it does not automatically change your loot spec or advance after a kill. Dungeon prompts appear once per visit, with another opportunity after leaving and re-entering. You can manually reopen the preview outside combat.
 
 Manual previews work with automatic opening disabled. Outside a supported encounter or dungeon, the window explains why loot comparison is unavailable and disables selection.
 
 ## Supported content
 
-Raid discovery uses the live Encounter Journal, including raids absent from the supplemental NPC catalog. A living attackable target must uniquely match a localized Journal encounter or creature name, or have a verified NPC hint. Ambiguous matches and inconsistent Journal identities leave comparison unavailable. The entries below have supplemental NPC coverage; other Journal raids can resolve dynamically.
+Raid discovery uses the live Encounter Journal's instance-scoped encounter list. Target names and GUIDs are not read: Midnight can restrict enemy identity even outside combat. Raids with available Journal encounters can resolve dynamically without a built-in NPC catalog. The encounter dropdown remains visible while loot loads or when no shared items are available.
 
 | Content | Preview |
 | --- | --- |
-| **The Venomous Abyss** | All eight encounters, including individual units in multi-boss fights, at the current raid difficulty (including LFR). |
+| **The Venomous Abyss** | All eight selectable encounters, at the current raid difficulty (including LFR). |
 | **The Tidebound Grotto** | Nymrissa Wavecaller at World, Normal, Heroic, or flexible Mythic difficulty. |
 | **The Voidspire** | All six encounters, using the current raid difficulty. |
-| **Nerub'ar Palace** | The Silken Court, using the current raid difficulty. |
+| **Nerub'ar Palace** | Journal encounters, using the current raid difficulty. |
 | **Supported Mythic / Mythic+ dungeons** | Dungeon-wide Mythic+ end-of-run loot comparison, available before a key starts. |
 
-Dungeon support follows the Retail client's challenge-map catalog and requires a matching Adventure Guide entry. Normal and Heroic dungeon entry does not trigger a preview. Unsupported raid targets, outdoor enemies, and raid trash do not trigger one either.
+Dungeon support follows the Retail client's challenge-map catalog and requires a matching Adventure Guide entry. Normal and Heroic dungeon entry does not trigger a preview. Outdoor areas do not trigger a preview. Changing targets inside a raid does not change the selected encounter or open a dismissed window.
 
 The dungeon preview is labeled **Mythic+**, including when entering an ordinary Mythic dungeon. It compares the combined Mythic boss loot pool by specialization; it does not predict an exact reward item level for your key.
 
@@ -69,7 +69,7 @@ All commands also work with `/spekifier` in place of `/spek`.
 
 ## Troubleshooting
 
-**The window did not open automatically.** Check Auto-show and the relevant content option, ensure you are outside combat, and check the supported content above. A dismissed raid target or an already-shown dungeon visit will not keep prompting. Use `/spek toggle` to reopen it manually.
+**The window did not open automatically.** Check Auto-show and the relevant content option, ensure you are outside combat, and check the supported content above. A dismissed raid comparison or an already-shown dungeon visit will not keep prompting on target changes. Use `/spek toggle` to reopen it manually.
 
 **Loot is loading or unavailable.** Close the Adventure Guide to let pending queries proceed, then allow time for the game to deliver item data. The window displays loading and failure messages instead of presenting partial loot lists as complete. `/spek debug` reports the current context and per-spec data state, even with the preview closed.
 
@@ -81,7 +81,7 @@ When reporting a problem, include your WoW version/build, encounter or dungeon, 
 
 ### Data and lifecycle
 
-Spekifier discovers raid instances and encounters from the Journal first, then uses supplemental NPC hints when a unique Journal name match is unavailable. Dungeon resolution requires a unique challenge-map match and Journal instance. Unsupported, ambiguous, or unavailable identities leave comparison unavailable.
+Spekifier discovers raid instances and encounter choices from the Journal, then uses the player-selected encounter and actual raid difficulty. Dungeon resolution requires a unique challenge-map match and Journal instance. Missing or incomplete Journal catalogs leave comparison unavailable, with diagnostics and bounded entry retries.
 
 Raid queries use the resolved encounter and actual raid difficulty. Dungeon queries combine the full dungeon's boss loot at Journal Mythic difficulty 23, excluding per-player bonus drops and deduplicating items. Queries preserve observable Adventure Guide selections and filters, defer while the Guide is open, cancel stale requests, and cache completed pools in memory. The shared row is derived only after every specialization's pool is complete; it does not alter provider data or diagnostic counts.
 
@@ -96,9 +96,8 @@ WoW loads Lua files in the order listed in `src/Spekifier.toc`. Each file receiv
 | Path | Responsibility |
 | --- | --- |
 | `src/Core/` | Addon object, saved preferences and migration, logging, and startup events. |
-| `src/Modules/Context/RaidCatalog.lua` | Supported raid NPC-to-Journal identities, separated from lookup logic. |
 | `src/Modules/Context/Resolver.lua` | Validated raid and dungeon identities; unsupported or ambiguous matches fail closed. |
-| `src/Modules/Context/AutoShow.lua` | Raid targeting, dungeon visits, combat, preferences, and prompt eligibility. |
+| `src/Modules/Context/AutoShow.lua` | Raid encounter selection, raid/dungeon visits, combat, preferences, and prompt eligibility. |
 | `src/Modules/Loot/Model.lua` | Request validation, cache keys, defensive copies, and item metadata hydration. |
 | `src/Modules/Loot/Provider.lua` | Request tokens, cache ownership, result publication, and bounded retries. |
 | `src/Modules/Loot/Journal.lua` | Journal selection tracking and query transactions, including restoration after failures. |
@@ -183,7 +182,7 @@ Detailed evidence and procedures: [encounter support](spec/Modules/Context/Encou
 
 The Testing job installs Lua 5.1, LuaFileSystem and Luacheck 1.2.0. It runs Luacheck against `src/` with the repository-owned [.luacheckrc](.luacheckrc), then runs `lua5.1 spec/run_tests.lua`. Both must pass before packaging or deployment. The lint configuration uses [Luacheck's standard Lua 5.1 globals](https://luacheck.readthedocs.io/en/stable/cli.html), explicitly lists the WoW APIs and addon globals used here, and retains default warning checks and the 120-character line limit. Colon-method receivers may be unused (`self = false`); other unused locals/arguments remain checked. Test mocks are checked through compilation and execution rather than addon-global lint rules. DBM code, configurations, annotations and actions are not fetched; LuaLS remains an optional local editor tool configured by `.luarc.json`.
 
-After checks pass, PRs create ZIPs using BigWigs' packager with uploads disabled (`-d`). ZIP artifacts remain downloadable for 14 days. PRs originating in this repository receive a comment linking the artifact, updated on subsequent runs; fork PRs do not receive the comment. Deployment never runs for PR events.
+After checks pass, PRs create ZIPs using BigWigs' packager with uploads disabled (`-d`). The actual package is validated for a single Spekifier/ root, a directly contained Spekifier.toc and all manifest files, with nested ZIPs and duplicate addon roots rejected. The single ZIP is uploaded with archive: false so GitHub does not wrap it in another ZIP. It remains downloadable for 14 days. Extract once into Interface/AddOns; the resulting path must be Interface/AddOns/Spekifier/Spekifier.toc. Avoid an extractor option that creates an extra enclosing folder. PRs originating in this repository receive a comment linking the artifact, updated on subsequent runs; fork PRs do not receive the comment. Deployment never runs for PR events.
 
 After checks pass on a push to `main` or publication of a GitHub release, the Deployment job runs the packager with publishing credentials. Untagged builds can upload alpha packages to CurseForge/Wago; GitHub Releases and WoWInterface uploads require a tag. The workflow does not create tags or enforce semantic versions: publish a GitHub release with a version tag (for example, `v12.0.0`). Tag pushes run validation but do not deploy, avoiding duplicate uploads when the release is published. The repository secret names below are mapped to the packager?s required environment names in the workflow; no secret renaming is needed. Publishing also requires the project IDs below. The addon Version remains `12.0.0`; keep release metadata accurate. [.pkgmeta](.pkgmeta) moves `src/` contents into a single installable `Spekifier/` folder and excludes repository tooling. The packager also generates a changelog.
 

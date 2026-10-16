@@ -1,4 +1,4 @@
-# Repository instructions
+﻿# Repository instructions
 
 ## Phase completion and manual acceptance
 
@@ -10,6 +10,12 @@
 - Keep future implementation work in its owning future phase. Do not move unfinished implementation to Manual Acceptance or check it merely to close a phase. Future phases remain unchecked until their work is complete.
 - Record validation performed and unavailable tooling honestly. Keep acceptance status references consistent in supporting documentation. Final Definition of Done and release readiness require outstanding manual checks and release finalization to pass.
 
+## Addon-site descriptions
+
+- Maintain `descriptions/CURSE_WAGO.md` as the single copy-ready Markdown description for both CurseForge and Wago; their descriptions are identical. Do not recreate separate `CURSEFORGE.md` or `WAGO.md` files.
+- Maintain `descriptions/WOWINTERFACE.md` as the copy-ready BBCode description for WoWInterface, keeping its content consistent with the shared Markdown description.
+- Do not add a README to `descriptions/`. Record publishing guidance, research, and validation status in `PLAN.md` when needed; keep the description files limited to text intended for direct copying onto the sites.
+
 ## Validation
 
 Run `lua spec/run_tests.lua` (or `lua5.1 spec/run_tests.lua`) with Lua 5.1 and LuaFileSystem installed for all mocked suites, syntax checks, and manifest validation. Run `luacheck src --config .luacheckrc` with Luacheck 1.2.0 for repository-owned static checks. After successful validation, use `lua scripts/package.lua <output.zip>` when preparing a clean-install candidate; platform packagers validate ZIP contents. Automated checks do not replace live WoW acceptance.
@@ -20,3 +26,4 @@ Run `lua spec/run_tests.lua` (or `lua5.1 spec/run_tests.lua`) with Lua 5.1 and L
 - Explain the cause and distinguish a temporary workaround from a completed fix. Regression validation must cover the general failure mode, including cases beyond the originally reported input.
 - Prefer authoritative runtime APIs for discovery. Use hardcoded data only for a verified API gap, and do not let supplemental mappings become a prerequisite for runtime discovery. Document the gap and preserve clear failure diagnostics.
 - Ask the user for clarification when intended behavior, scope, or a material design tradeoff is unclear; continue independent investigation while awaiting the answer. Do not silently narrow the requested fix to the reported symptom.
+

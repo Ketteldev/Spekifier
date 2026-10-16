@@ -50,9 +50,11 @@ for i = 1, 10 do
         a:SetWindowSkin(id)
         expect(w.point == point and w.width == width and w.height == height and w.encounterData == result, "switch retains position/size/data")
         expect(c.offset == 192 and runtime.confirmedSpecID == c.specID and runtime.openingReason == opening, "switch retains scroll/selection/lifecycle")
-        expect(w.TitleBg.alpha == 0 and w.TopTileStreaks.alpha == 0, "skin switches keep obsolete title bar hidden")
+        expect(w.TitleBg.alpha == (id == "elles" and 0 or 1), "skin switches restore Original title-area fill")
+        expect(w.TopTileStreaks.alpha == 0, "skin switches keep obsolete title decoration hidden")
         expect(w.title.point[1] == "TOPRIGHT" and w.title.fontSize == 22 and w.logo.width == 64, "left logo and title header persists across skins")
         expect(w.dragArea.height == 88, "replacement header remains draggable")
+        expect(w.resizeGrip.art:IsShown(), "native grey resize triangle remains visible")
         expect(w.Bg.alpha == (id == "elles" and 0 or 1) and w.closeLabel:IsShown() == (id == "elles"), "chrome replaced and restored")
         expect(w.InsetBg.alpha == (id == "elles" and 0 or 1) and w.BotLeftCorner.alpha == (id == "elles" and 0 or 1), "inset and bottom template corners restored")
         expect(w.CloseButton.normalRegion.alpha == (id == "elles" and 0 or 1) and w.CloseButton.pushedRegion.alpha == (id == "elles" and 0 or 1), "close textures restored")
@@ -98,7 +100,7 @@ expect(w.resizing and w.sizing == "BOTTOMRIGHT", "corner initiates resizing")
 w:SetSize(lw, lh)
 w.resizeGrip:Fire("OnMouseUp", "LeftButton")
 expect(a:GetSetting("windowWidth") == lw and a:GetSetting("windowHeight") == lh and not w.resizing, "resize persists dimensions")
-expect(strip.width == lw - 120, "shared strip adapts")
+expect(strip.width == lw - 472, "shared strip adapts")
 a:SetWindowSkin("original")
 expect(w.width == lw and w.height == lh, "skin preserves resize")
 local saved = SpekifierDB
@@ -118,6 +120,16 @@ for _, specs in ipairs({ 2, 3, 4 }) do
             expect(window.width * window.scale <= screen[1] - 40 + .001 and window.height * window.scale <= screen[2] - 40 + .001, "minimum layout fits screen")
             local r = { state = "ready", specs = {} }
             for _, col in ipairs(b:GetAllSpecColumns()) do r.specs[col.specID] = { state = "ready", items = col == b:GetSpecColumn(1) and items or {} } end
+            b:RenderWindowLoot(r)
+            local strip, picker = window.sharedLoot, window.encounterPicker
+            expect(picker:IsShown() and strip.frame:IsShown(),"raid picker remains visible with no shared items")
+            expect(strip.scroll.point[4] + strip.width + 12 <= window.width - 40 - picker.width,
+                "shared viewport reserves a gap before encounter control at minimum sizes")
+            expect(picker.label.textColor[1]==b:GetWindowPalette().text[1],"encounter label follows skin palette")
+            local before=b:GetWindowState().contextKey
+            local nextID=b:GetWindowState().resolvedContext.encounterID==2734 and 2733 or 2734
+            expect(b:SelectRaidEncounter(nextID) and b:GetWindowState().contextKey~=before,
+                "picker selection works across sizes and skins")
             b:RenderWindowLoot(r)
             local right = 0
             for _, col in ipairs(b:GetAllSpecColumns()) do

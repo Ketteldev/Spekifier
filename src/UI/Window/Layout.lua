@@ -22,16 +22,9 @@ function S:InitializeWindowSize()
     w.resizeGrip = grip
     grip:SetSize(24, 24); grip:SetPoint("BOTTOMRIGHT", w, "BOTTOMRIGHT", -2, 2)
     grip:SetFrameLevel(w:GetFrameLevel() + 5)
-    grip.lines = {}
-    -- Classic diagonal lines use Blizzard's resize art with palette tint.
+    -- Use the native grey resize triangle in both skins.
     grip.art = grip:CreateTexture(nil, "ARTWORK")
     grip.art:SetAllPoints(); grip.art:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-    for i = 1, 3 do
-        local line = grip:CreateTexture(nil, "OVERLAY")
-        line:SetSize(2, 6 + i * 4); line:SetPoint("BOTTOMRIGHT", grip, "BOTTOMRIGHT", -3 - (i - 1) * 5, 3)
-        line:SetRotation(-math.pi / 4)
-        grip.lines[i] = line
-    end
     grip:SetScript("OnMouseDown", function(_, button)
         if button == "LeftButton" then w.resizing = true; w:StartSizing("BOTTOMRIGHT") end
     end)
@@ -49,7 +42,7 @@ end
 function S:LayoutLootWindow()
     local w = self:GetMainWindow()
     if not w or not w.resizeGrip then return end
-    local shared = w.sharedLoot and w.sharedLoot.items and #w.sharedLoot.items > 0
+    local shared = w.sharedLoot and (w.sharedLoot.pickerShown or (w.sharedLoot.items and #w.sharedLoot.items > 0))
     local top = shared and 166 or 102
     local columns = self:GetAllSpecColumns()
     local step = (w:GetWidth() - 40) / math.max(1, #columns)
@@ -67,12 +60,5 @@ function S:LayoutLootWindow()
         c.range = math.max(0, count * 64 - viewport)
         c.bar:SetMinMaxValues(0, c.range); c.bar:SetShown(c.range > 0); c:SetOffset(c.offset)
     end
-    if w.sharedLoot then
-        local strip = w.sharedLoot
-        strip.width = w:GetWidth() - 120
-        strip.frame:SetWidth(w:GetWidth() - 40); strip.scroll:SetWidth(strip.width); strip.bar:SetWidth(strip.width)
-        local contentWidth = math.max(strip.width, #(strip.items or {}) * 48 - 8)
-        strip.content:SetWidth(contentWidth); strip.range = math.max(0, contentWidth - strip.width)
-        strip.bar:SetMinMaxValues(0, strip.range); strip.bar:SetShown(strip.range > 0); strip:SetOffset(strip.offset)
-    end
+    self:LayoutSharedLootRow()
 end

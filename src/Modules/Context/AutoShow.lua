@@ -2,7 +2,8 @@
 local _, addonTable = ...
 local Spekifier = addonTable.Spekifier
 local autoShowState = { inRaidInstance = false, targetingBoss = false, inCombat = false }
-local targetGeneration, visitGeneration = 1, 0
+local visitGeneration = 0
+local raidVisit
 local dungeonVisit
 local entryRetryGeneration = 0
 
@@ -21,18 +22,18 @@ local function RequestDungeonData()
     end
 end
 
--- Instance/Journal data can lag behind entry. Each retry reads current state
+-- Raid and dungeon data can lag behind entry. Each retry reads current state
 -- and respects combat, dismissal and the once-per-visit prompt.
-function Spekifier:RetryDungeonEntry()
+function Spekifier:RetryInstanceEntry()
     entryRetryGeneration = entryRetryGeneration + 1
     local generation, attempts = entryRetryGeneration, 0
     if not C_Timer or not C_Timer.After then return end
     local function retry()
         if generation ~= entryRetryGeneration then return end
         attempts = attempts + 1
-        self:RefreshAutoShow("DUNGEON_ENTRY_RETRY")
+        self:RefreshAutoShow("INSTANCE_ENTRY_RETRY")
         local inInstance, instanceType = IsInInstance()
-        if inInstance and instanceType == "party" and
+        if inInstance and (instanceType == "party" or instanceType == "raid") and
             not autoShowState.resolvedContext and attempts < 5 then
             C_Timer.After(1, retry)
         end
@@ -62,26 +63,25 @@ function Spekifier:RefreshAutoShow(event, allowOpening)
         dungeonVisit.name = name
         dungeonVisit.difficultyID = difficultyID
     end
+    if not inRaidInstance or not instanceID or instanceID <= 0 then
+        raidVisit = nil
+    elseif not raidVisit or raidVisit.instanceID ~= instanceID then
+        visitGeneration = visitGeneration + 1
+        raidVisit = { instanceID = instanceID, visitID = visitGeneration, prompted = false }
+    end
     local context, failureReason
     if dungeonVisit then
         context, failureReason = self:ResolveDungeonContext(dungeonVisit)
-    elseif inRaidInstance and not inCombat then
-        context, failureReason = self:ResolveRaidContext(instanceID, difficultyID)
+    elseif raidVisit and not inCombat then
+        context, failureReason = self:ResolveRaidContext(instanceID, difficultyID, raidVisit.encounterID)
+        if context then raidVisit.encounterID = context.encounterID end
     else
         failureReason = inCombat and "combat" or "ineligible-instance"
     end
-    local targetingBoss = context and context.kind == "raid" or false
     local windowState = self:GetWindowState()
-    if event == "PLAYER_TARGET_CHANGED" or
-        inRaidInstance ~= autoShowState.inRaidInstance then
-        targetGeneration = targetGeneration + 1
-        if not dungeonVisit then windowState.dismissedContextKey = nil end
-    end
-    if event == "PLAYER_REGEN_ENABLED" or (autoShowState.inCombat and not inCombat) then
-        if not dungeonVisit then windowState.dismissedContextKey = nil end
-    end
     autoShowState.inRaidInstance = inRaidInstance
-    autoShowState.targetingBoss = targetingBoss
+    autoShowState.targetingBoss = false
+    autoShowState.raidVisit = raidVisit
     autoShowState.inCombat = inCombat
     autoShowState.dungeonVisit = dungeonVisit
     autoShowState.resolvedContext = context
@@ -92,12 +92,10 @@ function Spekifier:RefreshAutoShow(event, allowOpening)
         (difficultyID == 0 and "None" or "Unknown difficulty")
     autoShowState.difficultyID = difficultyID
     autoShowState.contextKind = context and context.kind or nil
-    -- Raid display identity includes difficulty and actual unit identity, even
-    -- when a refresh arrives without PLAYER_TARGET_CHANGED.
+    -- Picker identity survives target changes and includes the current raid visit.
     autoShowState.contextKey = context and (context.kind == "dungeon" and
-        context.contextKey or table.concat({ "raid", targetGeneration, instanceID,
-            context.journalInstanceID, context.encounterID, difficultyID,
-            context.targetIdentity }, ":")) or nil
+        context.contextKey or table.concat({ "raid", raidVisit.visitID, instanceID,
+            context.journalInstanceID, context.encounterID, difficultyID }, ":")) or nil
     if context then context.contextKey = autoShowState.contextKey end
     autoShowState.preferenceKey = eligibleDungeon and "autoShowMythicPlus" or
         (inRaidInstance and raidPreferences[difficultyID] or nil)
@@ -108,7 +106,7 @@ function Spekifier:RefreshAutoShow(event, allowOpening)
         autoShowState.contextKey and not inCombat)
     -- Validity and permission to prompt are separate: shown visits stay valid.
     autoShowState.canPrompt = autoShowState.shouldAutoShow and
-        (not dungeonVisit or not dungeonVisit.prompted)
+        (not dungeonVisit or not dungeonVisit.prompted) and (not raidVisit or not raidVisit.prompted)
 
     local window = self:GetMainWindow()
     if inCombat then
@@ -116,13 +114,14 @@ function Spekifier:RefreshAutoShow(event, allowOpening)
         self:DebugAutoShow(event)
         return
     end
-    if window and window:IsShown() and windowState.contextKind == "dungeon" and
-        not (inInstance and instanceType == "party") then
+    if window and window:IsShown() and
+        ((windowState.contextKind == "dungeon" and not (inInstance and instanceType == "party")) or
+        (windowState.contextKind == "raid" and not inRaidInstance)) then
         self:HideWindow("invalid-context")
     end
     if window and window:IsShown() then
         self:UpdateWindowContext(autoShowState.contextKey)
-        if context and context.kind == "dungeon" then self:MarkDungeonPromptShown() end
+        if context then self:MarkVisitPromptShown() end
         if windowState.openingReason == "automatic" and not autoShowState.shouldAutoShow then
             self:HideWindow("invalid-context")
         end
@@ -142,20 +141,18 @@ function Spekifier:InitializeAutoShow()
         local frame = CreateFrame("Frame")
         for _, event in ipairs({ "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA",
             "PLAYER_DIFFICULTY_CHANGED", "CHALLENGE_MODE_MAPS_UPDATE", "CHALLENGE_MODE_START", "CHALLENGE_MODE_RESET",
-            "PLAYER_TARGET_CHANGED", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED",
-            "UNIT_HEALTH", "UNIT_FLAGS", "UNIT_FACTION", "UNIT_CLASSIFICATION_CHANGED" }) do
+            "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }) do
             frame:RegisterEvent(event)
         end
-        frame:SetScript("OnEvent", function(_, event, unit)
-            if event:sub(1, 5) == "UNIT_" and unit ~= "target" then return end
+        frame:SetScript("OnEvent", function(_, event)
             Spekifier:RefreshAutoShow(event)
             if event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
-                Spekifier:RetryDungeonEntry()
+                Spekifier:RetryInstanceEntry()
             end
         end)
         self.autoShowFrame = frame
         RequestDungeonData()
-        self:RetryDungeonEntry()
+        self:RetryInstanceEntry()
     end
     self:RefreshAutoShow()
 end
@@ -163,9 +160,28 @@ end
 function Spekifier:GetAutoShowState() return autoShowState end
 
 -- Manual display also consumes the visit prompt, including with auto-show disabled.
-function Spekifier:MarkDungeonPromptShown()
-    if dungeonVisit and autoShowState.resolvedContext then
-        dungeonVisit.prompted = true
+function Spekifier:MarkVisitPromptShown()
+    local visit = dungeonVisit or raidVisit
+    if visit and autoShowState.resolvedContext then
+        visit.prompted = true
         autoShowState.canPrompt = false
     end
+end
+
+-- Selection changes comparison only; the player still chooses their loot specialization.
+function Spekifier:SelectRaidEncounter(encounterID)
+    if InCombatLockdown() or not raidVisit then return false end
+    local owner = self:GetAutoShowState().contextKey
+    self:RefreshAutoShow(nil, false)
+    local state = self:GetAutoShowState()
+    if state.contextKey ~= owner then return false end
+    if state.inCombat or not state.resolvedContext or state.contextKind ~= "raid" then return false end
+    for _, entry in ipairs(state.resolvedContext.encounters) do
+        if entry.id == encounterID then
+            raidVisit.encounterID = encounterID
+            self:RefreshAutoShow("ENCOUNTER_SELECTED", false)
+            return true
+        end
+    end
+    return false
 end

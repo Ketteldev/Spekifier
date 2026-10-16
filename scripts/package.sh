@@ -1,5 +1,5 @@
 #!/bin/sh
-# Package src/ for installation; requires Linux coreutils and Info-ZIP zip/unzip.
+
 set -eu
 
 if [ "$#" -gt 1 ]; then

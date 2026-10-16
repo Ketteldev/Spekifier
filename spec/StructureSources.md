@@ -12,7 +12,7 @@ Historical implementation and API-evidence documents refer to the original paths
 
 | Previous file | Current owner(s) |
 | --- | --- |
-| `Modules/EncounterResolver.lua` | `Modules/Context/RaidCatalog.lua`, `Resolver.lua` |
+| `Modules/EncounterResolver.lua` | `Modules/Context/Resolver.lua` (NPC catalog retired by the encounter picker) |
 | `Modules/AutoShow.lua` | `Modules/Context/AutoShow.lua` |
 | `Modules/LootProvider.lua` | `Modules/Loot/Model.lua`, `Provider.lua`, `Journal.lua`, `Events.lua` |
 | `Modules/LootSpecialization.lua` | `Modules/Loot/Selection.lua` |
@@ -36,7 +36,7 @@ Final validation (2026-10-09): `.test-venv/Scripts/python.exe spec/run_tests.py 
 
 1. Back up existing SavedVariables and install `Spekifier-phase10-candidate.zip` into a clean addon folder. Removing obsolete files avoids accidentally testing a mixture of layouts. Confirm that `Spekifier.toc` is directly inside `AddOns/Spekifier`.
 2. Login and reload with existing preferences. Verify the saved skin, dimensions, automatic-opening choices, and minimap visibility, and check for missing-file or Lua errors.
-3. Repeat the [integration procedure](IntegrationSources.md), [automatic-opening checks](Modules/Context/AutoShowPreferencesSources.md#manual-procedure-pending), and [skin/resizing checks](UI/Skins/SkinsSources.md#manual-procedure-pending). Include supported raid targets and Mythic dungeon entry, combat/dismissal, delayed data, shared-item scrolling, native tooltips, and confirmed loot selection.
+3. Repeat the [integration procedure](IntegrationSources.md), [automatic-opening checks](Modules/Context/AutoShowPreferencesSources.md#manual-procedure-pending), and [skin/resizing checks](UI/Skins/SkinsSources.md#manual-procedure-pending). Include raid entry and encounter dropdown selection, and Mythic dungeon entry, combat/dismissal, delayed data, shared-item scrolling, native tooltips, and confirmed loot selection.
 4. Exercise every settings entry point and both skins. Run `/spek debug` while dismissed and confirm it reports loot without opening the window or resetting dismissal.
 5. Record client build, content/difficulty, results, and screenshots where requested. Check Phase 10 Manual Acceptance in PLAN.md only after actual execution or explicit user confirmation. Prior confirmed results remain historical evidence, not a new live pass for this build.
 

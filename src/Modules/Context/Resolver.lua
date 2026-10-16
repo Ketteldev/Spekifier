@@ -1,7 +1,6 @@
 -- Identity-only lookups; never mutate the Journal.
 local _, addonTable = ...
 local Spekifier = addonTable.Spekifier
-local raids = addonTable.RaidEncounters
 local function JournalInstance(instanceID)
     if not C_EncounterJournal or not C_EncounterJournal.GetInstanceForGameMap then
         return nil, "journal-api-unavailable"
@@ -40,76 +39,28 @@ function Spekifier:ResolveDungeonContext(visit)
             kind = "challenge-mode-end-of-run", challengeModeID = match,
         } }
 end
--- Explicit instance/encounter arguments avoid changing the shared Journal selection.
--- Journal creature IDs are never compared to NPC IDs from UnitGUID.
-local function FindJournalEncounter(journalID, instanceID, targetName)
-    if not EJ_GetEncounterInfoByIndex or not EJ_GetCreatureInfo then
-        return nil, "journal-discovery-api-unavailable"
-    end
-    if issecretvalue and issecretvalue(targetName) then return nil, "restricted-target-identity" end
-    if type(targetName) ~= "string" or targetName == "" then return nil, "target-name-unavailable" end
-    local match
+-- Instance-scoped Journal enumeration never reads restricted target identity.
+function Spekifier:ResolveRaidContext(instanceID, difficultyID, selectedEncounterID)
+    if InCombatLockdown() then return nil, "combat" end
+    if type(difficultyID) ~= "number" or difficultyID <= 0 then return nil, "difficulty-unavailable" end
+    local journalID, reason = JournalInstance(instanceID)
+    if not journalID then return nil, reason end
+    if not EJ_GetEncounterInfoByIndex then return nil, "journal-discovery-api-unavailable" end
+    local encounters, seen, selected = {}, {}, nil
     for index = 1, 100 do
         local name, _, encounterID = EJ_GetEncounterInfoByIndex(index, journalID)
         if not encounterID then
-            if match then return match end
-            return nil, "unsupported-target"
+            if #encounters == 0 then return nil, "journal-discovery-incomplete" end
+            selected = selected or encounters[1]
+            return { kind = "raid", instanceID = instanceID, journalInstanceID = journalID,
+                encounterID = selected.id, bossName = selected.name, encounters = encounters,
+                difficultyID = difficultyID, identitySource = "encounter-picker", lootMode = "raid" }
         end
-        local _, _, returnedID, _, _, returnedInstance, _, gameMap = EJ_GetEncounterInfo(encounterID)
-        if returnedID ~= encounterID or returnedInstance ~= journalID or gameMap ~= instanceID then
-            return nil, "encounter-data-mismatch"
-        end
-        local matches = name == targetName
-        for creatureIndex = 1, 100 do
-            local creatureID, creatureName = EJ_GetCreatureInfo(creatureIndex, encounterID)
-            if not creatureID then break end
-            if creatureName == targetName then matches = true end
-            if creatureIndex == 100 then return nil, "journal-discovery-incomplete" end
-        end
-        if matches then
-            if match and match ~= encounterID then return nil, "ambiguous-target" end
-            match = encounterID
-        end
+        if type(encounterID) ~= "number" or encounterID <= 0 or type(name) ~= "string" or
+            name == "" or seen[encounterID] then return nil, "journal-discovery-incomplete" end
+        local entry = { id = encounterID, name = name }
+        encounters[#encounters + 1], seen[encounterID] = entry, true
+        if encounterID == selectedEncounterID then selected = entry end
     end
     return nil, "journal-discovery-incomplete"
-end
-
-function Spekifier:ResolveRaidContext(instanceID, difficultyID)
-    if InCombatLockdown() then return nil, "combat" end
-    -- Discover the instance from live Journal data before consulting NPC hints.
-    local journalID, reason = JournalInstance(instanceID)
-    if not journalID then return nil, reason end
-    local raid = raids[instanceID]
-    if type(difficultyID) ~= "number" or difficultyID <= 0 then
-        return nil, "difficulty-unavailable"
-    end
-    if not UnitExists("target") or not UnitCanAttack("player", "target") or
-        UnitIsDeadOrGhost("target") then return nil, "ineligible-target" end
-    local guid = UnitGUID("target")
-    if issecretvalue and issecretvalue(guid) then return nil, "restricted-target-identity" end
-    if type(guid) ~= "string" then return nil, "target-identity-unavailable" end
-    local unitType, npcID = guid:match("^(%a+)%-%d+%-%d+%-%d+%-%d+%-(%d+)%-.+$")
-    if unitType ~= "Creature" then return nil, "unsupported-target-type" end
-    npcID = tonumber(npcID)
-    if not EJ_GetEncounterInfo then return nil, "encounter-api-unavailable" end
-    local encounterID
-    local identitySource = "journal-name"
-    local targetName = UnitName and UnitName("target")
-    encounterID, reason = FindJournalEncounter(journalID, instanceID, targetName)
-    -- Only supplemental verified NPC hints may bridge absent Journal names/APIs.
-    -- Never override ambiguous or inconsistent Journal data.
-    if not encounterID and (reason == "unsupported-target" or
-        reason == "journal-discovery-api-unavailable" or reason == "target-name-unavailable") then
-        encounterID = raid and raid.encounters[npcID]
-        if encounterID then identitySource = "npc-mapping" end
-    end
-    if not encounterID then return nil, reason end
-    local bossName, _, returnedID, _, _, encounterInstanceID, _, gameMapID =
-        EJ_GetEncounterInfo(encounterID)
-    if not bossName or returnedID ~= encounterID or encounterInstanceID ~= journalID or
-        gameMapID ~= instanceID then return nil, "encounter-data-mismatch" end
-    return { kind = "raid", instanceID = instanceID,
-        journalInstanceID = journalID, encounterID = encounterID,
-        bossName = bossName, difficultyID = difficultyID,
-        targetIdentity = guid, npcID = npcID, identitySource = identitySource, lootMode = "raid" }
 end

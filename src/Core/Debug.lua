@@ -51,13 +51,14 @@ function Spekifier:DebugAutoShow(event)
     elseif not state.resolvedContext then reason = state.failureReason or "unresolved"
     elseif window and window:IsShown() then reason = "window-shown"
     elseif windowState.dismissedContextKey == state.contextKey then reason = "dismissed"
-    elseif state.dungeonVisit and state.dungeonVisit.prompted then reason = "visit-already-prompted"
+    elseif (state.dungeonVisit and state.dungeonVisit.prompted) or
+        (state.raidVisit and state.raidVisit.prompted) then reason = "visit-already-prompted"
     else reason = "ready-to-open" end
     local summary = table.concat({ "instance=" .. state.instanceName,
         "difficulty=" .. state.difficultyName,
         "context=" .. tostring(state.contextKind), "decision=" .. reason,
         "lookup=" .. tostring(state.failureReason or "resolved") }, " ")
-    -- Unit events are frequent; log changed decisions and explicit zone/key events.
+    -- Log changed decisions and explicit zone/key events.
     if summary ~= self.lastAutoShowDebug or event == "PLAYER_ENTERING_WORLD" or
         event == "ZONE_CHANGED_NEW_AREA" or event == "CHALLENGE_MODE_START" then
         self:DebugPrint(event or "REFRESH", summary)

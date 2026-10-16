@@ -71,7 +71,7 @@ expect(runtime.confirmedSpecID == 72 and not w:IsShown() and s.messages[#s.messa
 local messages = #s.messages
 a.lootSpecFrame:Fire('OnEvent','PLAYER_LOOT_SPEC_UPDATED')
 expect(#s.messages == messages, 'repeated confirmation event does not duplicate message')
-for _, change in ipairs({{combat=true},{dead=true},{exists=false},{npcID=999},{npcID=244762},{difficultyID=15},{instanceType='none',inInstance=false}}) do
+for _, change in ipairs({{combat=true},{difficultyID=15},{instanceID=999},{instanceType='none',inInstance=false}}) do
     a,s = setup()
     for k,v in pairs(change) do s[k]=v end
     expect(not a:HandleSpecColumnClick(72,'LeftButton') and #s.calls == 0, 'fresh click rejects changed combat/target/difficulty/instance')
@@ -96,7 +96,7 @@ expect(#a:GetAllSpecColumns()==0,'no premature empty column registry')
 s.numSpecs=3; a.lootSpecFrame:Fire('OnEvent','PLAYER_TALENT_UPDATE')
 expect(#a:GetAllSpecColumns()==3,'late specialization data builds missing columns')
 a,s = setup(); s.delayed=true; a:HandleSpecColumnClick(72,'LeftButton')
-s.npcID=244762; a:RefreshAutoShow(nil,false)
+a:SelectRaidEncounter(2734)
 s.lootSpec=72; a.lootSpecFrame:Fire('OnEvent','PLAYER_LOOT_SPEC_UPDATED')
 expect(a:GetWindowState().selectionNotice==nil,'old request cannot confirm in new encounter')
 a,s = setup(); s.delayed=true; a:HandleSpecColumnClick(72,'LeftButton'); a:HideWindow('dismissed')

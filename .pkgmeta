@@ -9,8 +9,10 @@ ignore:
   - AGENTS.md
   - PLAN.md
   - README.md
+  - descriptions
   - scripts
   - spec
   - dist
   - artifacts
   - assets
+

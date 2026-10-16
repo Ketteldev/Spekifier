@@ -56,17 +56,20 @@ jobs:
         with:
           args: -d
           pandoc: false
-      - name: Stage test packages
-        shell: bash
+      - name: Validate test package
+        id: test-package
+        shell: pwsh
         run: |
-          mkdir -p artifacts
-          cp .release/*.zip artifacts/
+          $packages = @(Get-ChildItem .release/*.zip)
+          if ($packages.Count -ne 1) { throw 'Expected exactly one Retail test ZIP.' }
+          ./scripts/validate-package.ps1 -Path $packages[0].FullName
+          "path=$($packages[0].FullName)" >> $env:GITHUB_OUTPUT
       - name: Upload test packages
         id: upload-test-packages
         uses: actions/upload-artifact@v7
         with:
-          name: Spekifier-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
-          path: artifacts/*.zip
+          path: ${{ steps.test-package.outputs.path }}
+          archive: false
           if-no-files-found: error
           retention-days: 14
       - name: Link test package on pull request
@@ -82,9 +85,9 @@ jobs:
               marker,
               '## Spekifier test package',
               '',
-              `[Download the packaged test ZIPs](${process.env.ARTIFACT_URL})`,
+              `[Download the installable test ZIP](${process.env.ARTIFACT_URL})`,
               '',
-              'This artifact includes packager-fetched dependencies and substitutions. It expires after 14 days.',
+              'Extract once into Interface/AddOns so the manifest is at Interface/AddOns/Spekifier/Spekifier.toc. This ZIP includes packager-fetched dependencies and substitutions and expires after 14 days.',
             ].join('\n');
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
