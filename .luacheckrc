@@ -4,7 +4,8 @@ std = "lua51"
 -- Colon methods retain a receiver even when a particular method does not use it.
 self = false
 read_globals = {
-    "ChatTypeInfo", "EncounterJournal", "IsAddOnLoaded", "hooksecurefunc", "C_AddOns", "C_ChallengeMode", "C_EncounterJournal", "C_Item",
+    "ChatTypeInfo", "EncounterJournal", "IsAddOnLoaded", "hooksecurefunc", "CloseDropDownMenus",
+    "C_AddOns", "C_ChallengeMode", "C_EncounterJournal", "C_Item",
     "C_MythicPlus", "C_SeasonInfo", "C_Timer", "CreateBaseTooltipInfo",
     "CreateFrame", "DEFAULT_CHAT_FRAME", "EJ_GetCreatureInfo", "EJ_GetDifficulty",
     "EJ_GetEncounterInfo", "EJ_GetEncounterInfoByIndex", "EJ_GetLootFilter",

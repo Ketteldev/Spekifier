@@ -24,7 +24,6 @@ local expected = {
         'Core/Database.lua',
         'Core/Debug.lua',
         'Core/Events.lua',
-        'Modules/Context/RaidCatalog.lua',
         'Modules/Context/Resolver.lua',
         'Modules/Loot/Model.lua',
         'Modules/Loot/Provider.lua',

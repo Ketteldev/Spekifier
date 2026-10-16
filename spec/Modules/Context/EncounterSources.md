@@ -1,5 +1,7 @@
 # Phase 3 lookup evidence and validation
 
+Historical evidence below is preserved. The [Midnight encounter-picker update](EncounterPickerSources.md) supersedes target-name/GUID matching, NPC catalogs, and the old pending target-based procedures. Current live obligations are in PLAN.md Manual Acceptance.
+
 Inspected on 2026-10-08. This module resolves identity only. It does not claim a validated loot pool or working specialization selection.
 
 ## Retail API evidence

@@ -6,14 +6,10 @@ local windowState = { selectionAllowed = false }
 local resolutionMessages = {
     ["challenge-data-unavailable"] = "Mythic+ dungeon data is still loading. Try again shortly.",
     ["journal-instance-unavailable"] = "The Journal has no instance data available for this raid yet.",
-    ["journal-discovery-api-unavailable"] = "Journal target discovery is unavailable.",
+    ["journal-discovery-api-unavailable"] = "Journal encounter discovery is unavailable.",
     ["journal-discovery-incomplete"] = "Journal encounter data is incomplete. Try again shortly.",
-    ["ambiguous-target"] = "This target matches multiple Journal encounters.",
-    ["unsupported-target"] = "This target is not a supported raid boss.",
     ["unsupported-dungeon"] = "This dungeon has no supported Mythic+ reward source.",
     ["ambiguous-dungeon"] = "This dungeon's Mythic+ reward source is ambiguous.",
-    ["restricted-target-identity"] = "The target's identity is unavailable.",
-    ["ineligible-target"] = "Target a living, attackable supported boss.",
     ["ineligible-instance"] = "Enter a supported raid or Mythic dungeon.",
 }
 
@@ -48,13 +44,15 @@ function Spekifier:UpdateWindowContext(contextKey)
         mainWindow.header:SetText((context.name or "Dungeon") .. ": Mythic+")
     elseif context then
         local difficulty = GetDifficultyInfo and GetDifficultyInfo(context.difficultyID)
-        mainWindow.header:SetText(context.bossName .. "\n" .. (difficulty or ("Difficulty " .. context.difficultyID)))
+        mainWindow.header:SetText((state.instanceName or "Raid") .. "\n" ..
+            (difficulty or ("Difficulty " .. context.difficultyID)))
     else
         mainWindow.header:SetText("Loot comparison preview")
-        mainWindow.status:SetText("Preview: target a living raid boss or enter a Mythic dungeon " ..
+        mainWindow.status:SetText("Preview: enter a raid and choose an encounter, or enter a Mythic dungeon " ..
             "outside combat. Selection is unavailable. " ..
             (resolutionMessages[state.failureReason] or "Encounter information is unavailable. Try again shortly."))
     end
+    self:RefreshEncounterDropdown(context)
     self:RefreshWindowLoot(context)
     self:RenderWindowLoot(mainWindow.encounterData)
 end
@@ -154,7 +152,7 @@ function Spekifier:ShowWindow(reason)
     windowState.openingReason = reason
     self:UpdateWindowContext(state.contextKey)
     mainWindow:Show()
-    self:MarkDungeonPromptShown()
+    self:MarkVisitPromptShown()
     return true
 end
 

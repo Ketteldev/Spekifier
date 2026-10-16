@@ -29,3 +29,7 @@ Window sizes are normalized at creation and saved account-wide. Resizing updates
 
 Implementation acceptance is recorded in PLAN.md Phase 9. The consolidated Manual Acceptance section is authoritative for live status; screenshot and live interaction checks remain unchecked.
 
+
+Title-area correction (2026-10-12): Original restores the Blizzard TitleBg fill inside the retained outline; Elles hides it. The centered template title and decorative streaks stay hidden. Repeated switching is covered by the 435 focused skin checks; all eleven native Lua 5.1 suites, syntax/manifest validation and Luacheck 1.2.0 passed (zero warnings/errors). Verify the fill and unchanged Elles appearance through the manual procedure above; live verification remains pending in PLAN.md.
+
+Resize triangle correction (2026-10-12): Both skins use only native grey Blizzard resize art and the existing grip interaction; the accent overlays are no longer created. Repeated switching verifies native art visibility; 455 focused skin checks, all eleven native Lua 5.1 suites, syntax/manifest validation and Luacheck 1.2.0 passed with zero warnings/errors. Live appearance and resizing verification remain pending in PLAN.md.

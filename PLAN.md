@@ -2,9 +2,9 @@
 
 ## Goal and scope
 
-Before a raid boss fight, targeting a supported living boss inside a raid instance opens a window with one column per player specialization. Each column shows its spec icon and eligible boss loot for the current raid difficulty. Hovering highlights the whole column; clicking sets the player's loot specialization and visibly confirms the result.
+Before a raid boss fight, entering a supported raid outside combat opens a window with one column per player specialization and an Encounter dropdown to the right of Shared loot. Raid and actual difficulty come from the instance; the player chooses the encounter without reading restricted target identity. Each column shows its spec icon and eligible boss loot for the current raid difficulty. Hovering highlights the whole column; clicking sets the player's loot specialization and visibly confirms the result.
 
-Entering a supported dungeon on Mythic difficulty also opens the window with the dungeon-wide Mythic+ end-of-run chest loot table. This preview does not require a boss target or an active key and must clearly identify the loot as Mythic+, even on ordinary Mythic entry. Automatic opening otherwise excludes non-Mythic dungeons, outdoor areas, ordinary enemies, dead targets, and combat. Dungeon targets do not trigger opening. Being in a raid group alone is insufficient.
+Entering a supported dungeon on Mythic difficulty also opens the window with the dungeon-wide Mythic+ end-of-run chest loot table. This preview does not require a boss target or an active key and must clearly identify the loot as Mythic+, even on ordinary Mythic entry. Automatic opening otherwise excludes non-Mythic dungeons, outdoor areas, and combat. Target changes do not trigger opening or change the selected encounter. Being in a raid group alone is insufficient.
 
 ## Working approach
 
@@ -192,6 +192,35 @@ Implementation details:
 - [x] Remove the static raid allowlist and hardcoded Journal instance metadata. Discover raid instances and encounters through the Journal before consulting supplemental NPC hints; add exact unique localized encounter/creature name matching and diagnostics. Preserve identity checks and explicit ambiguity/data failures.
 - [x] Add general regression cases for an uncatalogued raid, Journal precedence, individual creature names, missing/mismatched data, unknown targets and ambiguity that NPC hints cannot override. All 11 suites, Lua 5.1 syntax and manifest checks pass (372 lifecycle checks).
 - [x] Update README, [architecture evidence and live procedure](spec/Modules/Context/EncounterSources.md#journal-first-architecture-follow-up-2026-10-09), and AGENTS.md to require root-cause fixes, prohibit symptom suppression, and request user clarification for unclear behavior/scope/tradeoffs.
+
+### Phase 3 follow-up: Midnight raid encounter picker (2026-10-14)
+
+The user's Venomous Abyss LFR debug report confirms `restricted-target-identity` outside combat, with parent/LFR automation enabled. The GUID prerequisite rejected every boss before name discovery or NPC fallback. Blizzard's current identity restrictions also cover names; adding mappings cannot repair that architecture. This follow-up supersedes target-based raid discovery and its pending procedures; confirmed historical acceptance remains preserved.
+
+- [x] Resolve raids through game instance, actual difficulty and explicit-instance Journal encounter enumeration, with no target API reads or NPC catalog prerequisite. Retire obsolete NPC mappings and target-event subscriptions; report incomplete/unavailable Journal data and recover delayed entry data with bounded retries.
+- [x] Add `Encounter: [dropdown]` on the right of the Shared row. Reserve a 340-pixel control area plus a 12-pixel gap, constrain shared icons to their scroll viewport, retain the row during loading/empty/failure, and support both skins/minimum sizes. The header shows raid/difficulty; dungeon comparisons omit the picker.
+- [x] Default to the first Journal encounter on each raid visit; preserve the player's selection through target changes, reopening, combat and difficulty changes. Keep automatic preference gates, raid post-combat reminders and dungeon once-per-visit behavior. Encounter selection changes comparison only; it does not advance after kills or set loot specialization automatically.
+- [x] Reject stale dropdown callbacks and old loot/selection deliveries after encounter/difficulty/visit changes or combat. Keep click-time validation and useful `/spek debug` encounter-source/raid-visit diagnostics.
+- [x] Update README, both copy-ready site descriptions, integration/structure procedures and [API evidence/live procedure](spec/Modules/Context/EncounterPickerSources.md). Keep new live acceptance unchecked below.
+- [x] Run native Lua 5.1 suites/syntax/manifest validation and Luacheck 1.2.0. All eleven suites pass; 293 lifecycle/resolver/debug checks, 48 provider/window checks, 378 preference checks and 527 skin/layout checks include the new workflow. Luacheck reports zero warnings/errors in 30 runtime Lua files.
+- [x] Prepare `dist/Spekifier-encounter-picker-candidate.zip` through the native Lua packaging launcher after validation; independently verify ZIP integrity, exact `src/` file set and byte equality.
+
+### Phase 3 follow-up: Prevent miniboss/trash reopening (2026-10-14)
+
+Supersedes the preceding picker follow-up's generic post-combat rearming. The user reports repeat automatic opening after level-92 miniboss kills. The cause is resetting dismissal on any combat end while the instance-based picker remains eligible, not a missing level/NPC filter.
+
+- [x] Track consumed raid prompts independently of window visibility and encounter selection. Generic combat end, retries, duplicate zone events, settings toggles and difficulty changes cannot rearm a shown prompt. Preserve deferred initial entry and manual reopening.
+- [x] Preserve real raid boss reminders through paired Blizzard encounter start/end events scoped to visit/difficulty. Never equate runtime event encounter IDs with Journal IDs or inspect target identity. Reject duplicate/unmatched/stale events; defer display until outside combat and respect preferences. Keep dungeon prompting unchanged and add consumed/active encounter diagnostics.
+- [x] Update README, both site descriptions and [source evidence/current live procedure](spec/Modules/Context/EncounterPickerSources.md#miniboss-reopening-correction-2026-10-14). All eleven Lua 5.1 suites/syntax/manifest checks pass, including 434 lifecycle/resolver/debug checks with general ordinary-combat regressions and actual boss-event cases.
+- [x] Luacheck 1.2.0 passes with zero warnings/errors in 30 runtime files. The native Lua packaging launcher produced `dist/Spekifier-raid-prompt-fix-candidate.zip`; independent verification passed ZIP integrity, exact 33-file source set and byte equality. Live acceptance remains unchecked below.
+
+### Phase 3 follow-up: Raid entry only (2026-10-14)
+
+The user clarified that raid auto-opening is once on zoning in, never after boss fights. This supersedes earlier generic combat-end and paired-encounter reminders. The previous boss-reminder assumption was incorrect; existing historical validations/confirmations remain preserved without establishing acceptance of the current behavior.
+
+- [x] Remove encounter-event rearming/subscriptions/pairing state and its active-encounter debug field. Keep visit consumption, selected encounter, manual reopening, preference gates, combat closing, deferred unshown initial entry and one new prompt on exit/re-entry.
+- [x] Update README, both copy-ready descriptions and current procedures. All eleven native Lua 5.1 suites, syntax and manifest validation pass, including 445 lifecycle/resolver/debug checks covering boss kills/wipes, repeated ordinary combat, all raid difficulties, manual/dismissed/confirmed windows, re-entry, duplicate notifications and deferred entry.
+- [x] Luacheck 1.2.0 passes with zero warnings/errors in 30 runtime files. Build `dist/Spekifier-raid-entry-only-candidate.zip` through the native Lua packaging launcher; independent verification passes ZIP integrity, exact 33-file source set and byte equality. Current live acceptance remains pending below.
 
 ## Phase 4: Retrieve loot per specialization
 
@@ -416,7 +445,7 @@ Acceptance checks:
 - [x] Verify runtime files introduced through Phase 5 appear in the correct manifest order.
 - [x] Verify final manifest order for all current runtime files through Phase 7; repeat when Phases 8/9 introduce files.
 
-Phase 7 automated validation (2026-10-08): all eight Lua 5.1 suites pass, totaling 850 unique checks. `spec/Integration.lua` adds 19 confirmed-specialization debug checks. `spec/run_tests.py` verifies syntax, exact manifest order and registration of all 14 runtime files, then optionally creates and validates a clean-install candidate archive. Debug reports the getter's raw setting, Current Specialization/explicit mode and effective confirmed ID/name even with the preview dismissed. The live integration checklist and release record are in `spec/IntegrationSources.md`. Fresh/upgrade login, clean-folder installation, final build/interface and release author remain pending user evidence; prior Phase 1–6.5 confirmation is not counted as Phase 7 acceptance.
+Phase 7 automated validation (2026-10-08): all eight Lua 5.1 suites pass, totaling 850 unique checks. `spec/Integration.lua` adds 19 confirmed-specialization debug checks. `spec/run_tests.py` verifies syntax, exact manifest order and registration of all 14 runtime files, then optionally creates and validates a clean-install candidate archive. Debug reports the getter's raw setting, Current Specialization/explicit mode and effective confirmed ID/name even with the preview dismissed. The live integration checklist and release record are in `spec/IntegrationSources.md`. Fresh/upgrade login, clean-folder installation, final build/interface and release author remain pending user evidence; prior Phase 1â€“6.5 confirmation is not counted as Phase 7 acceptance.
 
 Manual integration acceptance and evidence-dependent release finalization are tracked in [Manual Acceptance](#manual-acceptance); the detailed procedure remains in `spec/IntegrationSources.md`.
 
@@ -629,6 +658,8 @@ Secret-name follow-up (2026-10-10): preserve the user-selected repository secret
 Validation (2026-10-10): packager documentation/source confirms token names and required TOC project IDs. The manifest now contains user-provided CurseForge ID `1737398` and Wago ID `96d04q6O`; the WoWInterface ID remains absent. GitHub run logs and secret configuration have not been inspected; configuration findings do not establish which failure occurred in the user's release. Live upload and metadata obligations remain pending below.
 
 
+Addon-description documentation (2026-10-11): maintain [descriptions/CURSE_WAGO.md](descriptions/CURSE_WAGO.md) as the single copy-ready Markdown description for CurseForge and Wago, whose descriptions are identical, and [descriptions/WOWINTERFACE.md](descriptions/WOWINTERFACE.md) as the equivalent BBCode description. Separate CURSEFORGE.md and WAGO.md files and the descriptions README are removed per user preference; do not recreate them. Research reviewed Details!/DBM on CurseForge and indexed Plater content on Wago, with the MDT author README as a supporting layout reference; direct Wago pages were partly inaccessible. Copy was checked against the repository README and these documents are excluded from packaging. Authenticated site previews are unperformed. This update only changes documentation and description organization; no runtime validation is claimed. Phase 15 and outstanding release acceptance remain incomplete.
+
 ## Manual Acceptance
 
 Run outstanding checks after all implementation phases are complete. As each phase finishes, append its manual checks here under the source phase; split mixed tasks and preserve the full live procedure. Checked items retain the user's recorded 2026-10-08 confirmation for Phases 1-6.5. Unchecked items are deferred, not passed. Phase 8, Phase 9, Phase 10, and Phase 11 checks are recorded below.
@@ -649,13 +680,15 @@ Historical pending-live notes in phase validation paragraphs and supporting docu
 
 ### Phase 3
 
-- [ ] Run the [Journal-first live procedure](spec/Modules/Context/EncounterSources.md#journal-first-architecture-follow-up-2026-10-09) using `dist/Spekifier-journal-first-candidate.zip`: confirm uncatalogued raid discovery, explicit-instance API behavior, unique encounter/creature matches, hint fallback, correct loot and unchanged Journal selection during resolution. Record client build and evidence.
+Current procedure: [Midnight encounter picker](spec/Modules/Context/EncounterPickerSources.md#manual-procedure-pending), using `dist/Spekifier-encounter-picker-candidate.zip`. Older target/NPC lookup procedures and candidates are superseded; their pending loot, difficulty, lifecycle and API-validation obligations remain below. Existing confirmed historical results do not establish acceptance of the new workflow.
 
-- [ ] Run the [full Season 2 boss/difficulty procedure](spec/Modules/Context/EncounterSources.md#complete-season-2-raid-catalog-follow-up-2026-10-09) using `dist/Spekifier-season2-candidate.zip`: all eight Venomous Abyss encounters and all individual multi-boss units, plus Tidebound Grotto World/Normal/Heroic/flexible Mythic. Confirm encounter/difficulty/loot/selection, dismissal, combat and unsupported-target rejection; record client/build and tested combinations.
+- [ ] Verify runtime Journal enumeration in current and uncatalogued raids, localized encounter choices, delayed data recovery, and unchanged Journal selection during discovery. Record client/build and evidence.
+- [ ] Compare every Venomous Abyss encounter at LFR/Normal/Heroic/Mythic and Tidebound Grotto at World/Normal/Heroic/flexible Mythic against the Guide. Verify actual difficulty, correct per-spec loot and confirmed specialization selection. Record tested combinations; untested combinations remain pending.
+- [ ] Reproduce the reported LFR situation with restricted boss identity: raid entry/manual opening and all eight dropdown choices must work without targeting or readable identity. Verify dismissal survives retargeting, combat closes, neither ordinary combat nor boss kills/wipes rearm the shown entry prompt, manual reopening retains the chosen encounter, and exit/re-entry resets the visit.
+- [ ] Verify the right-aligned encounter control beside Shared loot in both skins at minimum/default sizes and multiple UI scales, including long localized names, shared overflow, loading/empty/failed loot, stale open-menu callbacks and raid/dungeon transitions. Record screenshots/results in the linked procedure.
+- [x] In WoW, verify supported current/older raid targets, multi-boss identities, unsupported-target rejection, and difficulty/context changes. (Historical confirmation retained; target-based discovery is superseded.)
 
-- [ ] Retest Nek'zali in The Venomous Abyss LFR using `dist/Spekifier-nekzali-candidate.zip`: automatic opening, correct boss/difficulty/loot, dismissal/retargeting and combat closing. Follow the [recorded procedure](spec/Modules/Context/EncounterSources.md) and record client build/results. The original failure is confirmed; the fix is not yet live-accepted.
-
-- [x] In WoW, verify supported current/older raid targets, multi-boss identities, unsupported-target rejection, and difficulty/context changes.
+- [ ] Raid entry-only correction: install `dist/Spekifier-raid-entry-only-candidate.zip` and follow the [current live procedure](spec/Modules/Context/EncounterPickerSources.md#raid-entry-only-clarification-2026-10-14). Trash, level-92 minibosses, real boss kills and wipes must never reopen a shown/dismissed/confirmed/manual comparison. Verify manual reopening retains the chosen encounter, exit/re-entry grants one new prompt, duplicate zone events do not, deferred initial entry remains supported, preferences/difficulty changes cannot rearm a displayed prompt, and dungeon prompting remains unchanged. This replaces the older miniboss candidate's pending procedure; record client/build/results. No live pass is claimed.
 
 ### Phase 4
 
@@ -716,9 +749,9 @@ Follow [the detailed live procedure and record evidence](spec/Modules/Context/Au
 
 - [ ] In WoW, verify all existing options entry points reach the shared page, Auto-show and six indented controls render correctly, child disabling retains values, Mythic+ explanation is readable, and minimap visibility is independent across UI scales.
 - [ ] Verify mixed parent/child choices persist through actual reload/login and upgrades preserve existing false values while defaulting missing children on.
-- [ ] Verify parent suppression and independent LFR/Normal/Heroic/Mythic raid prompting, actual/legacy difficulty mapping where supported, immediate automatic closing, unrelated-child independence, dismissal preservation and fail-closed contexts.
+- [ ] Verify parent suppression and independent LFR/Normal/Heroic/Mythic raid prompting, actual/legacy difficulty mapping where supported, immediate automatic closing, unrelated-child independence, dismissal preservation through retargeting and unavailable-context diagnostics, using the current encounter-picker procedure.
 - [ ] Verify ordinary Mythic before a key and active-key entry use Mythic+ gating; enabling unshown visits, combat deferral/cancellation, consumed prompts, keystone transitions, exit/re-entry and Normal/Heroic exclusion retain their lifecycle.
-- [ ] Verify manual preview remains available with any preference combination, preference changes preserve manual windows, combat/context/selection restrictions and existing post-wipe behavior remain intact, debug permission matches settings, and no Lua errors occur.
+- [ ] Verify manual preview remains available with any preference combination, preference changes preserve manual windows, combat/context/selection restrictions and raid entry-only prompting remain intact, debug permission matches settings, and no Lua errors occur.
 
 ### Phase 9: Skins and window resizing
 
@@ -733,6 +766,10 @@ Follow [the full live procedure and record screenshots/evidence](spec/UI/Skins/S
 - [ ] New logos: clean-install [the logo candidate](dist/Spekifier-logo-candidate.zip), restart WoW to load new texture files, and verify the minimap logo's transparency, border, hover, left/right click and dragging. Open the loot preview in both Original and Elles skins at minimum/default window sizes; confirm the upper-left logo is 64x64, has a transparent background, and has a 12-pixel gap above the first spec rectangle or shared-loot row; confirm it does not overlap raid/dungeon headings. Updated transparent assets and padding were automated-validated on 2026-10-10; live verification of these changes remains pending. Check the addon metadata icon in the AddOns list. Record client/build and visual results here; automated validation does not establish this result.
 
 - [ ] Unified left header: install the current logo candidate and check both skins at minimum/default sizes. Confirm the logo/title read as one left-aligned group, encounter and difficulty remain readable, the old centered title bar is absent, the 12-pixel loot gap remains, and header dragging, options and closing work. Record client/build and visual results here.
+
+- [ ] Original title-area fill (2026-10-12): verify the former title area is filled inside its retained outline, with no centered title or streak decoration; switch Original/Elles repeatedly and confirm Elles remains unchanged. Automated validation passed all eleven Lua 5.1 suites, syntax/manifest checks, 435 focused skin checks, and Luacheck 1.2.0 (zero warnings/errors in 31 files). Live appearance remains pending; see [skin procedure](spec/UI/Skins/SkinsSources.md#manual-procedure-pending).
+
+- [ ] Resize triangle in both skins (2026-10-12): verify only the native grey triangle remains in Original and Elles, with no gold or blue overlay lines, and resizing still works after repeated skin switching. Automated validation passed all eleven Lua 5.1 suites, syntax/manifest checks, 455 focused skin checks and Luacheck 1.2.0 (zero warnings/errors). Live verification remains pending; see [skin procedure](spec/UI/Skins/SkinsSources.md#manual-procedure-pending).
 
 ### Phase 10: Lua structure refactor
 
@@ -767,13 +804,12 @@ Follow [workflow behavior and deployment setup](README.md#github-automation). Th
 
 - [ ] Options are reachable through the game's Addons settings, preview gear, options commands, and minimap launcher; the hide checkbox and minimap commands immediately synchronize and persist button visibility.
 
-- [ ] A supported living raid boss targeted outside combat opens the correct difficulty-aware loot comparison.
+- [ ] Supported raid entry outside combat opens a raid/difficulty-aware comparison with a working encounter picker; restricted target identity is unnecessary.
 - [ ] Every specialization has an accurate eligible-loot list, column highlight, and working click selection.
 - [ ] Selected state reflects the game's confirmed loot specialization.
 - [ ] Supported Mythic dungeon entry prompts once per visit with dungeon-wide Mythic+ chest loot, without requiring a target or active key and subject to combat deferral.
-- [ ] Non-Mythic dungeon entry, dungeon targets, outdoor areas, trash, and combat never trigger an automatic popup.
-- [ ] Dismissal, target changes, reloads, and delayed data cannot restore stale or misleading UI.
+- [ ] Non-Mythic dungeon entry, target changes, outdoor areas, and combat never trigger an automatic popup; raid auto-opening is once on entry per visit; no ordinary or boss fight can rearm a shown prompt.
+- [ ] Dismissal, encounter/target changes, reloads, and delayed data cannot restore stale or misleading UI.
 - [ ] Unsupported encounters are handled clearly, supported scope is documented, and the integrated workflow has been verified in WoW.
 - [ ] A persistent parent Auto-show option and independent Mythic+, LFR, Normal Raid, Heroic Raid, Mythic Raid, and World Raid options control automatic opening while preserving manual preview and dismissal behavior.
 - [ ] Players can choose complete Original and Elles window skins from a persistent, extensible options dropdown, with both appearances visually validated and existing interactions preserved.
-

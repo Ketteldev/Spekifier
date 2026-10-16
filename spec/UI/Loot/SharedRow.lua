@@ -46,7 +46,7 @@ for _, count in ipairs({ 2, 3, 4 }) do
         expect(strip.icons[1].item.itemID == 10, "equivalent refreshed ordering stable")
         local empty = {}; for i=1,count do empty[i]={} end
         a:RenderWindowLoot(pool(a, empty))
-        expect(not strip.frame:IsShown() and w.height == 720 and a:GetSpecColumn(1).frame.point[5] == -102,
+        expect(strip.frame:IsShown() and w.height == 784 and a:GetSpecColumn(1).frame.point[5] == -166,
             "no-shared layout reclaims all strip space")
         expect(strip.icons[1].item == nil and strip.icons[1].icon.texture == nil,
             "obsolete shared icon bindings removed")
@@ -93,23 +93,23 @@ for _, status in ipairs({"loading","failed","unsupported"}) do
     local partial=pool(a,{{1,2},{1,2},{1,2}})
     partial.specs[3].state=status
     a:RenderWindowLoot(partial) -- Even an incorrectly final aggregate fails closed.
-    expect(not strip.frame:IsShown() and not GameTooltip.shown and strip.icons[1].item==nil,
+    expect(strip.frame:IsShown() and #strip.items==0 and not GameTooltip.shown and strip.icons[1].item==nil,
         status .. " spec prevents false intersection and removes tooltip")
     expect(shownIDs(a:GetSpecColumn(1))=="1,2" and shownIDs(a:GetSpecColumn(3))=="",
         "complete individual pool stays intact while partial pool is hidden")
     partial.specs[3].state="ready"
     partial.state=status
     a:RenderWindowLoot(partial)
-    expect(not strip.frame:IsShown(), status .. " aggregate prevents shared classification")
+    expect(#strip.items==0, status .. " aggregate prevents shared classification")
     partial.state="ready"
     a:RenderWindowLoot(partial)
     expect(#strip.items==2 and strip.frame:IsShown(), "delayed completion recomputes intersection")
 end
 local missing=pool(a,{{1},{1},{1}}); missing.specs[3]=nil
 a:RenderWindowLoot(missing)
-expect(not strip.frame:IsShown(), "missing displayed spec cannot classify shared loot")
+expect(#strip.items==0, "missing displayed spec cannot classify shared loot")
 a:RenderWindowLoot(pool(a,{{1},{1},{}}))
-expect(not strip.frame:IsShown() and shownIDs(a:GetSpecColumn(1))=="1", "empty complete spec makes intersection empty")
+expect(#strip.items==0 and shownIDs(a:GetSpecColumn(1))=="1", "empty complete spec makes intersection empty")
 local all=pool(a,{{9,8},{8,9},{9,8}})
 a:RenderWindowLoot(all)
 for _, c in ipairs(a:GetAllSpecColumns()) do
@@ -138,10 +138,10 @@ a:RenderWindowLoot(changed)
 expect(not GameTooltip.shown and strip.icons[1].item.itemID==7, "changed shared item clears old tooltip")
 a:RenderWindowLoot(overflow); strip:SetOffset(100); first:Fire("OnEnter")
 state.difficultyID=16; event("PLAYER_DIFFICULTY_CHANGED")
-expect(not strip.frame:IsShown() and strip.offset==0 and first.item==nil and not GameTooltip.shown,
+expect(strip.frame:IsShown() and strip.offset==0 and first.item==nil and not GameTooltip.shown,
     "difficulty invalidation clears shared items/scroll/tooltips synchronously")
 a:RenderWindowLoot(overflow); first:Fire("OnEnter")
-state.exists=false; event("PLAYER_TARGET_CHANGED")
+state.inInstance=false; event("ZONE_CHANGED_NEW_AREA")
 expect(not strip.frame:IsShown() and first.item==nil and not GameTooltip.shown, "context loss removes shared row")
 GameTooltip=nil
 

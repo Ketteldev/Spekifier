@@ -32,6 +32,12 @@ local function fixture(overrides, saved)
         state.mapRequests = state.mapRequests + 1
     end }
 
+    function UIDropDownMenu_SetWidth(d, width) d.width = width end
+    function UIDropDownMenu_SetText(d, text) d.text = text end
+    function UIDropDownMenu_CreateInfo() return {} end
+    function UIDropDownMenu_AddButton(info) state.menu[#state.menu + 1] = info end
+    function UIDropDownMenu_Initialize(d, callback) d.initialize = callback end
+    state.menu = {}
     UISpecialFrames, SlashCmdList, SpekifierDB = {}, {}, saved
     UIParent = { GetWidth = function() return state.uiWidth or 1000 end,
         GetHeight = function() return state.uiHeight or 800 end }
@@ -140,6 +146,7 @@ local function fixture(overrides, saved)
     function InCombatLockdown() return state.combat end
     local function readTarget()
         assert(not state.combat, "target API read during combat")
+        assert(not state.forbidTargetReads, "target API read forbidden")
         state.targetReads = state.targetReads + 1
     end
     function UnitExists() readTarget(); return state.exists end
@@ -177,8 +184,18 @@ local function fixture(overrides, saved)
         end,
     }
     -- Match the game API signature so editor inference accepts unit arguments.
+    local defaultIDs = state.instanceID == 3004 and {2888,2874,2882,2894,2871,2887,2883,2895} or
+        (state.instanceID == 2987 and {2849} or (state.instanceID == 2657 and {2608} or
+        {2733,2734,2735,2736,2737,2738}))
+    if not state.journalEncounters then
+        state.journalEncounters = {}
+        for _, id in ipairs(defaultIDs) do
+            state.journalEncounters[#state.journalEncounters + 1] = {id=id,name="Localized Boss " .. id}
+        end
+    end
     function EJ_GetEncounterInfoByIndex(index, journalID)
         assert(journalID == (state.journalID or (state.instanceID == 2657 and 1273 or 1307)), "explicit Journal instance required")
+        if state.noEncounter then return nil end
         local entry = state.journalEncounters and state.journalEncounters[index]
         if entry then return entry.name, nil, entry.id end
     end
@@ -190,7 +207,10 @@ local function fixture(overrides, saved)
             end
         end
     end
-    function UnitName(unit) return unit == "target" and (state.targetName or "Unknown target") or "Tester" end
+    function UnitName(unit)
+        if unit == "target" then readTarget(); return state.targetName or "Unknown target" end
+        return "Tester"
+    end
     function GetNumSpecializations() return state.numSpecs or 3 end
     function GetSpecializationInfo(i) return i, "Spec " .. i, nil, i end
     local namespace = {}
@@ -212,7 +232,6 @@ local function fixture(overrides, saved)
         "src/UI/Loot/ItemRows.lua",
         "src/UI/Loot/Columns.lua",
         "src/UI/Loot/Renderer.lua",
-        "src/Modules/Context/RaidCatalog.lua",
         "src/Modules/Context/Resolver.lua",
         "src/Modules/Commands.lua",
         "src/Modules/Context/AutoShow.lua",
@@ -280,169 +299,205 @@ local function fixture(overrides, saved)
         state.loadedAddons[state.startupAddon] = true
     end
     addon:OnPlayerLogin()
-    local function event(name, unit) addon.autoShowFrame:Fire("OnEvent", name, unit) end
+    local function event(name, ...) addon.autoShowFrame:Fire("OnEvent", name, ...) end
     return addon, state, event, frames
 end
 
-local cases = {
-    { "ordinary trash", { classification = "normal", level = 80, npcID = 999 }, false },
-    { "elite trash", { classification = "elite", level = 80, npcID = 999 }, false },
-    { "missing target", { exists = false }, false },
-    { "friendly boss", { attackable = false }, false },
-    { "dead boss", { dead = true }, false },
-    { "dungeon boss", { instanceType = "party" }, false },
-    { "outdoor boss", { inInstance = false, instanceType = "none" }, false },
-    { "known boss without skull level", { classification = "normal", level = 80 }, true },
-    { "unknown skull-level target", { classification = "elite", npcID = 999 }, false },
-    { "login in combat", { combat = true }, false },
-}
-for _, case in ipairs(cases) do
-    local addon = fixture(case[2])
-    expect(addon:GetMainWindow():IsShown() == case[3], case[1])
+-- Raid prompting and comparison never inspect a target, including secret identities.
+for _, overrides in ipairs({{}, {exists=false}, {dead=true}, {attackable=false},
+    {npcID=999}, {noGUID=true}, {secretGUID=true,guid="secret"}, {forbidTargetReads=true}}) do
+    local a,s,event=fixture(overrides)
+    local w,c=a:GetMainWindow(),a:GetAutoShowState().resolvedContext
+    expect(w:IsShown() and c.encounterID==2733, "raid entry selects first Journal encounter")
+    expect(c.identitySource=="encounter-picker" and not c.targetIdentity and not c.npcID,
+        "raid context has no restricted identity")
+    expect(s.targetReads==0 and not a:GetAutoShowState().targetingBoss,"target reads absent")
+    expect(w.encounterPicker:IsShown() and w.sharedLoot.frame:IsShown(),"picker visible without loot")
+    local key=a:GetWindowState().contextKey
+    event("PLAYER_TARGET_CHANGED")
+    expect(a:GetWindowState().contextKey==key and s.targetReads==0,"target events preserve picker context")
+    a:HideWindow("dismissed"); event("PLAYER_TARGET_CHANGED"); s:Tick()
+    expect(not w:IsShown(),"target changes and retries do not undo dismissal")
 end
+local a,state,event,frames=fixture()
+local window,runtime=a:GetMainWindow(),a:GetWindowState()
+expect(not a.autoShowFrame.events.PLAYER_TARGET_CHANGED and not a.autoShowFrame.events.UNIT_HEALTH,
+    "instance workflow needs no target event subscriptions")
+local key=runtime.contextKey
+window.encounterData={old=true}
+expect(a:SelectRaidEncounter(2734),"select listed encounter")
+expect(runtime.contextKey~=key and runtime.resolvedContext.encounterID==2734 and window.encounterData==nil,
+    "selection replaces loot ownership synchronously")
+expect(window.encounterPicker.dropdown.text=="Localized Boss 2734","dropdown displays selected encounter")
+expect(window.header.text:find("Test Dungeon",1,true),"header shows raid name")
+expect(not a:SelectRaidEncounter(999),"unknown encounter rejected")
+local selectedKey=runtime.contextKey
+state.difficultyID=17; event("PLAYER_DIFFICULTY_CHANGED")
+expect(runtime.resolvedContext.encounterID==2734 and runtime.difficultyID==17 and
+    runtime.contextKey~=selectedKey,"difficulty changes retain encounter and invalidate loot")
+state.menu={}; window.encounterPicker.dropdown.initialize(nil,1)
+expect(#state.menu==6 and state.menu[2].checked,"dropdown contains Journal list and checked selection")
+local stale=state.menu[3].func
+state.difficultyID=15; event("PLAYER_DIFFICULTY_CHANGED"); stale()
+expect(runtime.resolvedContext.encounterID==2734,"stale menu callbacks cannot change new context")
+state.menu={}; window.encounterPicker.dropdown.initialize(nil,1); state.menu[4].func()
+expect(runtime.resolvedContext.encounterID==2736,"native dropdown callback selects encounter")
+state.combat=true; event("PLAYER_REGEN_DISABLED")
+expect(not window:IsShown() and not a:SelectRaidEncounter(2733),"combat closes and blocks picker")
+state.combat=false; event("PLAYER_REGEN_ENABLED")
+expect(not window:IsShown() and a:GetAutoShowState().resolvedContext.encounterID==2736,
+    "ordinary combat end cannot reopen a shown raid comparison")
+event("ENCOUNTER_START", 90001, "Runtime boss", 15)
+event("ENCOUNTER_END", 90001, "Runtime boss", 15, 20, 1)
+expect(not window:IsShown() and a:GetAutoShowState().resolvedContext.encounterID==2736,
+    "boss encounter end cannot reopen the raid entry comparison")
+a:HideWindow("dismissed")
+event("PLAYER_TARGET_CHANGED"); expect(not window:IsShown(),"retarget never reopens dismissed raid")
+state.inInstance=false; event("ZONE_CHANGED_NEW_AREA")
+state.inInstance=true; event("ZONE_CHANGED_NEW_AREA")
+expect(window:IsShown() and runtime.resolvedContext.encounterID==2733,"new visit resets encounter")
+state.journalEncounters={{id=8000,name="Replacement"}}; event("PLAYER_ENTERING_WORLD")
+expect(runtime.resolvedContext.encounterID==8000,"removed selection falls back to first current encounter")
+state.instanceType="party"; state.difficultyID=23; event("ZONE_CHANGED_NEW_AREA")
+expect(runtime.contextKind=="dungeon" and not window.encounterPicker:IsShown(),"dungeon hides picker")
+expect(not a:SelectRaidEncounter(8000),"dungeon cannot accept raid selection")
+state.inInstance=false; event("ZONE_CHANGED_NEW_AREA")
+expect(not window:IsShown(),"exit closes preview")
 
-local addon = fixture(nil, { initialized = true, settings = {
-    enabled = false, windowShown = true, custom = "preserved" } })
-expect(not addon:GetMainWindow():IsShown(), "disabled and saved visibility cannot open")
-expect(addon.db.settings.enabled == false and addon.db.settings.debugEnabled == false,
-    "merge missing defaults without overwriting false")
-expect(addon.db.settings.windowShown == nil and addon.db.settings.custom == "preserved",
-    "remove legacy visibility and preserve unrelated preference")
-addon:InitializeDatabase()
-expect(addon.db.settings.enabled == false, "repeat migration preserves settings")
-for _, saved in ipairs({ { initialized = true }, { settings = false }, { settings = {
-    enabled = false, debugEnabled = true } } }) do
-    local migrated = fixture({ exists = false }, saved)
-    expect(type(migrated.db.settings) == "table" and migrated:GetSetting("enabled") ~= nil,
-        "missing or malformed settings repaired")
-    if saved.settings.debugEnabled then
-        expect(migrated:GetSetting("debugEnabled"), "debug preference preserved")
+-- Menu callbacks must recheck the live instance even before its zone event arrives.
+a,state,event=fixture()
+local picker=a:GetMainWindow().encounterPicker
+state.menu={}; picker.dropdown.initialize(nil,1)
+local pendingMenu=state.menu[2].func
+state.instanceID=3004; pendingMenu()
+expect(a:GetAutoShowState().instanceID==3004 and a:GetAutoShowState().resolvedContext.encounterID==2733,
+    "stale click refreshes instance and cannot select prior raid encounter")
+a,state,event=fixture()
+state.menu={}; a:GetMainWindow().encounterPicker.dropdown.initialize(nil,1)
+pendingMenu=state.menu[2].func
+state.combat=true; pendingMenu()
+expect(a:GetAutoShowState().resolvedContext.encounterID==2733,"menu callback cannot change encounter during combat")
+-- Malformed/incomplete catalogs must not yield partial selectable lists.
+a,state,event=fixture()
+state.journalEncounters={}
+for i=1,100 do state.journalEncounters[i]={id=i,name="Boss "..i} end
+event("PLAYER_ENTERING_WORLD")
+expect(not a:GetMainWindow():IsShown() and a:GetAutoShowState().failureReason=="journal-discovery-incomplete",
+    "bounded enumeration rejects unterminated catalogs")
+
+-- Miniboss/trash combat is not a raid encounter, regardless of target level/classification.
+for _, difficulty in ipairs({17,14,15,16}) do
+    for _, close in ipairs({"shown","dismissed","selected","manual"}) do
+        local a,s,ev=fixture({difficultyID=difficulty,level=92,npcID=999,forbidTargetReads=true,
+            selectionModule=close=="selected"})
+        local w=a:GetMainWindow()
+        a:SelectRaidEncounter(2734)
+        if close=="dismissed" then a:HideWindow("dismissed")
+        elseif close=="selected" then a:GetSpecColumn(2).frame:Fire("OnClick","LeftButton")
+        elseif close=="manual" then a:HideWindow("dismissed"); a:ShowWindow("manual") end
+        for fight=1,3 do
+            s.combat=true; ev("PLAYER_REGEN_DISABLED")
+            s.combat=false; ev("PLAYER_REGEN_ENABLED")
+            ev("ZONE_CHANGED_NEW_AREA"); ev("PLAYER_DIFFICULTY_CHANGED"); s:Tick()
+            a:InitializeAutoShow()
+            expect(not w:IsShown(),"level-92/non-encounter combat cannot reopen: "..difficulty.."/"..close)
+        end
+        expect(a:GetAutoShowState().resolvedContext.encounterID==2734 and s.targetReads==0,
+            "trash suppression retains chosen encounter without inspecting unit identity")
+        for _, success in ipairs({0,1}) do
+            s.combat=true; ev("PLAYER_REGEN_DISABLED")
+            ev("ENCOUNTER_START",55555,"Real boss",difficulty)
+            ev("ENCOUNTER_END",55555,"Real boss",difficulty,20,success)
+            s.combat=false; ev("PLAYER_REGEN_ENABLED")
+            ev("ENCOUNTER_END",55555,"Real boss",difficulty,20,success)
+            expect(not w:IsShown() and a:GetAutoShowState().raidVisit.prompted,
+                "boss kills/wipes never rearm the raid entry prompt")
+        end
+        a:ShowWindow("manual")
+        expect(w:IsShown() and a:GetWindowState().resolvedContext.encounterID==2734,
+            "manual reopening retains selected encounter after boss fights")
+        a:HideWindow("dismissed")
+        s.inInstance=false; ev("ZONE_CHANGED_NEW_AREA")
+        s.inInstance=true; ev("ZONE_CHANGED_NEW_AREA")
+        expect(w:IsShown() and w.showCount>=2,"leaving and reentering grants one new entry prompt")
+        a:HideWindow("dismissed"); ev("PLAYER_ENTERING_WORLD"); s:Tick()
+        expect(not w:IsShown(),"duplicate world events never recreate consumed visit")
     end
 end
-addon = fixture({ inInstance = false }, { settings = { windowShown = true } })
-expect(not addon:GetMainWindow():IsShown(), "reload outside raid never restores popup")
+a,state,event=fixture()
+expect(not a.autoShowFrame.events.ENCOUNTER_START and not a.autoShowFrame.events.ENCOUNTER_END,
+    "entry-only prompting does not subscribe to boss encounter events")
+for _, setting in ipairs({"enabled","autoShowNormalRaid"}) do
+    a,state,event=fixture(nil,{settings={[setting]=false}})
+    event("ENCOUNTER_START",12345,"Boss",14)
+    event("ENCOUNTER_END",12345,"Boss",14,20,1)
+    expect(not a:GetMainWindow():IsShown(),"boss events never create a suppressed entry prompt")
+end
+a,state,event=fixture({instanceType="party",difficultyID=23})
+a:HideWindow("dismissed"); event("ENCOUNTER_START",12345,"Dungeon boss",23)
+event("ENCOUNTER_END",12345,"Dungeon boss",23,5,1)
+expect(not a:GetMainWindow():IsShown(),"dungeon boss events cannot rearm consumed dungeon entry")
+a,state,event=fixture({combat=true})
+state.inInstance=false; event("ZONE_CHANGED_NEW_AREA")
+state.combat=false; event("PLAYER_REGEN_ENABLED")
+expect(not a:GetMainWindow():IsShown(),"departed deferred raid entry is canceled")
+a,state,event=fixture()
+a:HideWindow("dismissed"); state.combat=true; event("PLAYER_REGEN_DISABLED")
+state.difficultyID=17; event("PLAYER_DIFFICULTY_CHANGED")
+state.combat=false; event("PLAYER_REGEN_ENABLED")
+expect(not a:GetMainWindow():IsShown(),"difficulty change during trash cannot revive consumed raid prompt")
+a:ShowWindow("manual")
+expect(a:GetMainWindow():IsShown(),"manual reopening remains available after ordinary combat")
 
-for _, close in ipairs({ "button", "escape", "slash" }) do
-    local a, state, event = fixture()
-    local window, runtime = a:GetMainWindow(), a:GetWindowState()
-    local key = runtime.contextKey
-    if close == "button" then
-        window:Hide() -- template close button hides directly
-    elseif close == "escape" then
-        _G[UISpecialFrames[1]]:Hide() -- Escape's registered-frame path
-    else
-        SlashCmdList.SPEKIFIER("toggle")
+-- Runtime discovery supports uncatalogued instances and all listed encounters/difficulties.
+for _, difficulty in ipairs({17,14,15,16,250,233}) do
+    a,state,event=fixture({instanceID=9001,journalID=9002,difficultyID=difficulty,
+        journalEncounters={{id=9004,name="New Boss"},{id=9005,name="Another Boss"}}})
+    expect(a:GetMainWindow():IsShown(),"uncatalogued raid entry "..difficulty)
+    expect(a:SelectRaidEncounter(9005) and a:GetWindowState().resolvedContext.difficultyID==difficulty,
+        "uncatalogued encounter selection keeps actual difficulty")
+end
+for _, difficulty in ipairs({17,14,15,16}) do
+    a,state,event=fixture({instanceID=3004,journalID=1320,difficultyID=difficulty,
+        secretGUID=true,guid="secret"})
+    for _, id in ipairs({2888,2874,2882,2894,2871,2887,2883,2895}) do
+        expect(a:SelectRaidEncounter(id) and a:GetWindowState().resolvedContext.encounterID==id,
+            "all eight Venomous Abyss encounters selectable "..difficulty.."/"..id)
     end
-    expect(not window:IsShown() and runtime.openingReason == nil and
-        runtime.lastCloseReason == "dismissed" and runtime.dismissedContextKey == key,
-        close .. " synchronizes dismissal")
-    expect(runtime.contextKey == nil and not runtime.selectionAllowed, close .. " clears context")
-    for _, refresh in ipairs({ "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "UNIT_HEALTH" }) do
-        event(refresh, "target")
-        expect(not window:IsShown(), close .. " suppresses unrelated refresh " .. refresh)
-    end
-    a:InitializeAutoShow()
-    expect(not window:IsShown(), "reinitialization does not clear dismissal")
-    state.exists = false
-    event("PLAYER_TARGET_CHANGED")
-    state.exists = true
-    event("PLAYER_TARGET_CHANGED")
-    expect(window:IsShown() and runtime.contextKey ~= key, close .. " retarget permits prompt")
-    expect(a.db.settings.windowShown == nil, "visibility never persisted")
+    expect(state.targetReads==0,"all encounters work without target identity")
 end
-
-local a, state, event, frames = fixture()
-local window, runtime = a:GetMainWindow(), a:GetWindowState()
-local key = runtime.contextKey
-window.encounterData = { loot = "old" }
-event("PLAYER_TARGET_CHANGED")
-expect(window:IsShown() and runtime.contextKey ~= key and window.encounterData == nil,
-    "boss switch clears previous display immediately")
-local shows = window.showCount
-event("UNIT_HEALTH", "player")
-expect(window.showCount == shows, "unrelated unit event ignored")
-state.dead = true
-event("UNIT_HEALTH", "target")
-expect(not window:IsShown() and runtime.contextKey == nil and runtime.lastCloseReason == "invalid-context",
-    "boss death hides automatic window without target change")
-state.dead = false
-event("UNIT_HEALTH", "target")
-expect(window:IsShown(), "programmatic hide does not dismiss")
-state.attackable = false
-event("UNIT_FACTION", "target")
-expect(not window:IsShown(), "friendly target hides")
-state.attackable = true
-event("UNIT_FLAGS", "target")
-state.inInstance = false
-event("ZONE_CHANGED_NEW_AREA")
-expect(not window:IsShown(), "leaving raid hides automatic window")
-
-for _, wasDismissed in ipairs({ false, true }) do
-    a, state, event = fixture()
-    window, runtime = a:GetMainWindow(), a:GetWindowState()
-    if wasDismissed then window:Hide() end
-    state.targetReads = 0
-    event("PLAYER_REGEN_DISABLED") -- authoritative before lockdown changes
-    expect(not window:IsShown() and state.targetReads == 0, "combat entry hides without target reads")
-    state.combat = true
-    event("PLAYER_TARGET_CHANGED")
-    SlashCmdList.SPEKIFIER("toggle")
-    expect(not window:IsShown() and state.targetReads == 0 and a.message ~= nil,
-        "combat prevents manual opening and target reads")
-    state.combat = false
-    event("PLAYER_REGEN_ENABLED")
-    expect(window:IsShown() and runtime.openingReason == "automatic", "wipe permits fresh prompt")
+for _, case in ipairs({
+    {{noJournal=true},"journal-instance-unavailable"},
+    {{journalEncounters={}},"journal-discovery-incomplete"},
+    {{journalEncounters={{id=1,name=""}}},"journal-discovery-incomplete"},
+    {{journalEncounters={{id=1,name="Boss"},{id=1,name="Duplicate"}}},"journal-discovery-incomplete"},
+    {{difficultyID=0},"difficulty-unavailable"},
+}) do
+    a=fixture(case[1])
+    expect(not a:GetMainWindow():IsShown() and a:GetAutoShowState().failureReason==case[2],
+        "raid discovery fails honestly: "..case[2])
 end
-
-a, state, event = fixture({ inInstance = false })
-SlashCmdList.SPEKIFIER("t")
-window, runtime = a:GetMainWindow(), a:GetWindowState()
-expect(window:IsShown() and runtime.openingReason == "manual" and runtime.contextKey == nil,
-    "manual preview outside raid")
-expect(window.status.text:find("Preview") and not runtime.selectionAllowed, "explanatory disabled preview")
-for _, column in pairs(a:GetAllSpecColumns()) do
-    expect(column.frame.icon.alpha == 1 and column.visualState == "disabled", "preview columns disabled")
+a,state,event=fixture({noJournal=true})
+state.noJournal=false; state:Tick()
+expect(a:GetMainWindow():IsShown(),"bounded entry retry recovers delayed raid data")
+a,state,event=fixture({journalEncounters={}})
+state.journalEncounters={{id=1,name="Late Boss"}}; state:Tick()
+expect(a:GetMainWindow():IsShown(),"bounded retry recovers delayed encounter list")
+for _, opts in ipairs({{combat=true},{inInstance=false},{instanceType="party",difficultyID=2}}) do
+    a=fixture(opts); expect(not a:GetMainWindow():IsShown(),"ineligible entry remains closed")
 end
-state.inInstance = true
-event("ZONE_CHANGED_NEW_AREA")
-expect(runtime.contextKey ~= nil and runtime.openingReason == "manual", "manual ownership retained")
-window.encounterData = { old = true }
-state.exists = false
-event("PLAYER_TARGET_CHANGED")
-expect(window:IsShown() and window.encounterData == nil and runtime.contextKey == nil,
-    "manual invalid context stays open with cleared display")
-event("PLAYER_REGEN_DISABLED")
-expect(not window:IsShown() and runtime.openingReason == nil, "combat hides manual preview")
-
-a, state, event = fixture(nil, { settings = { enabled = false } })
-SlashCmdList.SPEKIFIER("toggle")
-expect(a:GetMainWindow():IsShown(), "manual preview available when auto-show disabled")
-a:GetMainWindow():Hide()
-a:SetSetting("enabled", true)
-event("UNIT_HEALTH", "target")
-expect(not a:GetMainWindow():IsShown(), "manual dismissal suppresses automatic reopening")
-event("PLAYER_TARGET_CHANGED")
-expect(a:GetMainWindow():IsShown(), "changing target clears manual dismissal")
-a:SetSetting("enabled", false)
-event("UNIT_HEALTH", "target")
-expect(not a:GetMainWindow():IsShown(), "disabled setting closes automatic window")
-
-a, state, event, frames = fixture()
-local frameCount, bindings, registrations = #frames, a.autoShowFrame.bindings, a.autoShowFrame.registrations
-local windowBindings = a:GetMainWindow().bindings
-a:OnPlayerLogin()
-a:CreateMainWindow()
-a:InitializeAutoShow()
-expect(#frames == frameCount and a.autoShowFrame.bindings == bindings and
-    a.autoShowFrame.registrations == registrations and a:GetMainWindow().bindings == windowBindings,
-    "repeat initialization has no duplicate frames or handlers")
-expect(#UISpecialFrames == 1, "Escape registration unique")
-for _, name in ipairs({ "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "PLAYER_TARGET_CHANGED",
-    "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED", "UNIT_HEALTH", "UNIT_FLAGS", "UNIT_FACTION",
-    "UNIT_CLASSIFICATION_CHANGED" }) do
-    expect(a.autoShowFrame.events[name], "registered lifecycle event " .. name)
-end
-
+a,state,event=fixture({combat=true})
+state.combat=false; event("PLAYER_REGEN_ENABLED")
+expect(a:GetMainWindow():IsShown(),"combat entry defers raid prompt")
+a=fixture(nil,{settings={enabled=false,custom="preserved",windowShown=true}})
+expect(not a:GetMainWindow():IsShown() and a.db.settings.custom=="preserved" and
+    a.db.settings.windowShown==nil,"preferences migrate without restoring visibility")
+a:ShowWindow("manual")
+expect(a:GetMainWindow():IsShown(),"manual raid picker ignores disabled automation")
+a,state,event=fixture({inInstance=false})
+a:ShowWindow("manual")
+expect(a:GetMainWindow():IsShown() and not a:GetWindowState().resolvedContext and
+    a:GetMainWindow().status.text:find("choose an encounter",1,true),"manual unsupported preview explains workflow")
 
 -- Dungeon entry is independent of all target APIs and current target state.
 for _, difficulty in ipairs({ 1, 2, 8, 23 }) do
@@ -614,148 +669,8 @@ expect(window:IsShown() and runtime.contextKind == "raid", "dungeon to raid resu
 window:Hide()
 event("PLAYER_REGEN_DISABLED")
 event("PLAYER_REGEN_ENABLED")
-expect(window:IsShown(), "raid wipe reset still works after dungeon dismissal")
--- Phase 3 acceptance and fail-closed identity checks.
--- An entirely uncatalogued raid must be discovered without new static entries.
-for _, target in ipairs({"New Boss", "Second Creature"}) do
-    local addon,s = fixture({instanceID=9001,journalID=9002,encounterJournalID=9002,
-        npcID=9003,targetName=target,journalEncounters={{id=9004,name="New Boss",
-        creatures={"First Creature","Second Creature"}}}})
-    local c=addon:GetAutoShowState().resolvedContext
-    expect(addon:GetMainWindow():IsShown() and c and c.encounterID==9004 and
-        c.identitySource=="journal-name" and s.journalLookups>0,
-        "uncatalogued raid resolved from Journal " .. target)
-end
-for _, case in ipairs({
-    { {noJournal=true}, "journal-instance-unavailable" },
-    { {targetName="Trash"}, "unsupported-target" },
-    { {targetName="New Boss",journalEncounters={{id=9004,name="New Boss"},{id=9005,name="New Boss"}}}, "ambiguous-target" },
-    { {targetName="New Boss",encounterMapID=1}, "encounter-data-mismatch" },
-}) do
-    local overrides={instanceID=9001,journalID=9002,encounterJournalID=9002,npcID=9003,
-        targetName="New Boss",journalEncounters={{id=9004,name="New Boss"}}}
-    for k,v in pairs(case[1]) do overrides[k]=v end
-    local addon=fixture(overrides)
-    expect(not addon:GetMainWindow():IsShown() and addon:GetAutoShowState().failureReason==case[2],
-        "Journal discovery rejection " .. case[2])
-end
-local mapped,s=fixture({noJournal=true})
-expect(s.journalLookups>0 and mapped:GetAutoShowState().failureReason=="journal-instance-unavailable",
-    "Journal discovery precedes mapped target lookup")
-local preferred=fixture({targetName="Journal Boss",journalEncounters={{id=8000,name="Journal Boss"}}})
-expect(preferred:GetAutoShowState().resolvedContext.encounterID==8000 and
-    preferred:GetAutoShowState().resolvedContext.identitySource=="journal-name",
-    "Journal identity takes priority over supplemental NPC hints")
-local ambiguous=fixture({targetName="Same",journalEncounters={{id=8000,name="Same"},{id=8001,name="Same"}}})
-expect(ambiguous:GetAutoShowState().failureReason=="ambiguous-target" and
-    not ambiguous:GetMainWindow():IsShown(), "NPC hint cannot suppress Journal ambiguity")
-local tierUnits = {
-    {259927,2888}, {258558,2874}, {258557,2874}, {259181,2882},
-    {261835,2894}, {261843,2894}, {261848,2894}, {261584,2894},
-    {257347,2871}, {257368,2887}, {257361,2887},
-    {259854,2883}, {257911,2883}, {257758,2895},
-}
-for _, unit in ipairs(tierUnits) do
-    for _, difficulty in ipairs({17,14,15,16}) do
-        local addon = fixture({instanceID=3004,npcID=unit[1],journalID=1320,
-            encounterJournalID=1320,difficultyID=difficulty,classification="normal",level=80})
-        local c = addon:GetAutoShowState().resolvedContext
-        expect(addon:GetMainWindow():IsShown() and c and c.encounterID==unit[2] and
-            c.journalInstanceID==1320 and c.difficultyID==difficulty,
-            "Venomous Abyss unit/difficulty " .. unit[1] .. "/" .. difficulty)
-    end
-end
-for _, difficulty in ipairs({250,14,15,233}) do
-    local addon,s,ev = fixture({instanceID=2987,npcID=252959,
-        journalID=1317,encounterJournalID=1317,difficultyID=difficulty})
-    local c = addon:GetAutoShowState().resolvedContext
-    expect(addon:GetMainWindow():IsShown() and c and c.encounterID==2849 and
-        c.journalInstanceID==1317 and c.difficultyID==difficulty,
-        "Tidebound Grotto actual difficulty " .. difficulty)
-    addon:HideWindow("dismissed"); ev("UNIT_HEALTH","target")
-    expect(not addon:GetMainWindow():IsShown(), "Grotto dismissal persists")
-    ev("PLAYER_TARGET_CHANGED")
-    expect(addon:GetMainWindow():IsShown(), "Grotto retarget opens")
-    s.combat=true; ev("PLAYER_REGEN_DISABLED")
-    expect(not addon:GetMainWindow():IsShown(), "Grotto combat closes")
-    s.combat=false; s.npcID=259927; ev("PLAYER_TARGET_CHANGED")
-    expect(not addon:GetMainWindow():IsShown() and
-        addon:GetAutoShowState().failureReason=="unsupported-target", "Grotto rejects other raid NPC")
-end
-for _, difficulty in ipairs({ 17, 14, 15, 16 }) do
-    a, state, event = fixture({ instanceID = 3004, npcID = 259927,
-        journalID = 1320, encounterJournalID = 1320, returnedEncounterID = 2888,
-        difficultyID = difficulty, name = "The Venomous Abyss" })
-    local c = a:GetAutoShowState().resolvedContext
-    expect(a:GetMainWindow():IsShown() and c and c.encounterID == 2888 and
-        c.journalInstanceID == 1320 and c.instanceID == 3004 and
-        c.npcID == 259927 and c.difficultyID == difficulty,
-        "Nek'zali resolves and opens at actual difficulty " .. difficulty)
-    a:HideWindow("dismissed")
-    event("UNIT_HEALTH", "target")
-    expect(not a:GetMainWindow():IsShown(), "Nek'zali dismissal persists")
-    event("PLAYER_TARGET_CHANGED")
-    expect(a:GetMainWindow():IsShown(), "Nek'zali retarget permits prompt")
-    state.npcID = 999
-    event("PLAYER_TARGET_CHANGED")
-    expect(not a:GetMainWindow():IsShown() and
-        a:GetAutoShowState().failureReason == "unsupported-target",
-        "Venomous Abyss unknown units do not resolve as Nek'zali")
-    state.npcID, state.encounterMapID = 259927, 2912
-    event("PLAYER_TARGET_CHANGED")
-    expect(not a:GetMainWindow():IsShown() and
-        a:GetAutoShowState().failureReason == "encounter-data-mismatch",
-        "Nek'zali rejects mismatched Journal identity")
-end
-for _, npc in ipairs({ 240435, 240434, 250892, 254109, 240432,
-    250589, 250588, 250587, 244761 }) do
-    a = fixture({ npcID = npc, level = 80, classification = "normal" })
-    local c = a:GetAutoShowState().resolvedContext
-    expect(a:GetMainWindow():IsShown() and c and c.npcID == npc and
-        c.journalInstanceID == 1307 and c.difficultyID == 14 and c.targetIdentity,
-        "current supported raid unit resolves " .. npc)
-end
-for _, npc in ipairs({ 217489, 217491 }) do
-    a = fixture({ instanceID = 2657, npcID = npc, level = 30, classification = "elite" })
-    expect(a:GetAutoShowState().resolvedContext.encounterID == 2608 and
-        a:GetMainWindow():IsShown(), "older multi-boss unit resolves without skull " .. npc)
-end
-for _, case in ipairs({
-    { { instanceID = 999 }, "unsupported-target" },
-    { { npcID = 999 }, "unsupported-target" },
-    { { noGUID = true }, "target-identity-unavailable" },
-    { { guid = "Player-1-1" }, "unsupported-target-type" },
-    { { guid = "Creature-malformed" }, "unsupported-target-type" },
-    { { secretGUID = true, guid = "secret" }, "restricted-target-identity" },
-    { { journalID = 999 }, "encounter-data-mismatch" },
-    { { noJournal = true }, "journal-instance-unavailable" },
-    { { noEncounter = true }, "encounter-data-mismatch" },
-    { { returnedEncounterID = 999 }, "encounter-data-mismatch" },
-    { { encounterJournalID = 999 }, "encounter-data-mismatch" },
-    { { encounterMapID = 999 }, "encounter-data-mismatch" },
-    { { difficultyID = 0 }, "difficulty-unavailable" },
-}) do
-    a = fixture(case[1])
-    expect(not a:GetMainWindow():IsShown() and a:GetAutoShowState().failureReason == case[2],
-        "fail closed: " .. case[2])
-end
-a, state, event = fixture()
-window, runtime = a:GetMainWindow(), a:GetWindowState()
-key = runtime.contextKey
-window.encounterData = { old = true }
-state.difficultyID = 16
-event("PLAYER_DIFFICULTY_CHANGED")
-expect(window:IsShown() and runtime.contextKey ~= key and runtime.difficultyID == 16 and
-    window.encounterData == nil and runtime.resolvedContext.difficultyID == 16,
-    "raid difficulty invalidates displayed context")
-window.encounterData = { old = true }
-state.npcID = 240434
-event("UNIT_FLAGS", "target")
-expect(runtime.resolvedContext.encounterID == 2734 and window.encounterData == nil,
-    "encounter identity updates even without target event")
-state.npcID = 999
-event("UNIT_FLAGS", "target")
-expect(not window:IsShown() and runtime.resolvedContext == nil, "unknown target removes resolved context")
+expect(not window:IsShown(), "ordinary raid combat does not reset dismissal after dungeon transition")
+
 for _, case in ipairs({
     { { instanceType = "party", difficultyID = 23, instanceID = 999 }, "unsupported-dungeon" },
     { { instanceType = "party", difficultyID = 23,
@@ -782,7 +697,7 @@ for _, api in ipairs({ "journal", "encounter", "challenge" }) do
     a, state, event = fixture(api == "challenge" and
         { instanceType = "party", difficultyID = 23 } or nil)
     if api == "journal" then C_EncounterJournal = nil
-    elseif api == "encounter" then EJ_GetEncounterInfo = nil
+    elseif api == "encounter" then EJ_GetEncounterInfoByIndex = nil
     else C_ChallengeMode = nil end
     event("PLAYER_ENTERING_WORLD")
     expect(not a:GetMainWindow():IsShown() and not a:GetAutoShowState().resolvedContext,

@@ -63,7 +63,7 @@ function Spekifier:SelectLootSpecialization(specID)
     local state, window = self:GetWindowState(), self:GetMainWindow()
     local key, difficulty, source = state.contextKey, state.difficultyID, state.sourceKey
     if not window or not window:IsShown() then return false end
-    -- Resolve actual target/instance/visit at click time without automatic opening.
+    -- Resolve actual encounter/instance/visit at click time without automatic opening.
     self:RefreshAutoShow(nil, false)
     self:RefreshLootSpecialization()
     if not state.selectionAllowed or not window:IsShown() or state.contextKey ~= key or

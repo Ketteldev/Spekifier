@@ -77,7 +77,7 @@ w.encounterData=savedData
 local count=j.queries
 for i=1,10 do event("UNIT_HEALTH","target") end
 expect(j.queries==count,"unchanged target does not issue full loot queries")
-state.npcID=240434; event("PLAYER_TARGET_CHANGED")
+a:SelectRaidEncounter(2734)
 expect(w.encounterData.context.encounterID==2734,"boss switch immediately replaces displayed data")
 expect(a:GetSpecColumn(1).rows[1].item == w.encounterData.specs[1].items[1],
     "boss switch replaces row binding with new provider data")
@@ -94,11 +94,11 @@ expect(w.encounterData==nil and a.LootProvider.active==nil,"combat invalidates w
 
 a,state,event,j=setup(); w=a:GetMainWindow()
 a.LootProvider:Invalidate(); j.missingLink=true
-state.npcID=240434; event("PLAYER_TARGET_CHANGED")
+a:SelectRaidEncounter(2734)
 expect(w.encounterData.state=="loading","new boss can remain loading")
 expect(a:GetSpecColumn(1).rows[1].item == nil and a:GetSpecColumn(1).message.text:find("Loading"),
     "delayed provider data clears prior boss rows and explains loading")
-state.npcID=240432; event("PLAYER_TARGET_CHANGED")
+a:SelectRaidEncounter(2736)
 j.missingLink=false; state:Tick()
 expect(w.encounterData.context.encounterID==2736 and w.encounterData.state=="ready",
     "old boss timer cannot render after rapid switch")
@@ -184,6 +184,7 @@ for _, case in ipairs({
 }) do
     local addon,s,ev,journal=setup({instanceID=case[1],journalID=case[2],
         encounterJournalID=case[2],npcID=case[3],difficultyID=case[5]})
+    addon:SelectRaidEncounter(case[4])
     local data=addon:GetMainWindow().encounterData
     expect(data and data.state=="ready" and data.context.encounterID==case[4] and
         data.context.difficultyID==case[5] and data.specs[1].journalDifficultyID==case[5],

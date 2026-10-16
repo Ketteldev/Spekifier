@@ -34,9 +34,9 @@ end
 local a, state, event, frames = fixture()
 local w, column = a:GetMainWindow(), a:GetSpecColumn(1)
 local runtime = a:GetWindowState()
-expect(w.header.text:find("Localized Boss", 1, true) and w.header.text:find("14", 1, true),
-    "raid header identifies boss and difficulty")
-expect(w.width >= 1080 and w.height == 720 and w.strata == "FULLSCREEN_DIALOG" and w.level == 100,
+expect(w.header.text:find("Test Dungeon", 1, true) and w.header.text:find("14", 1, true),
+    "raid header identifies instance and difficulty")
+expect(w.width >= 1080 and w.height == 784 and w.strata == "FULLSCREEN_DIALOG" and w.level == 100,
     "larger preview stays below tooltip strata")
 expect(w.scripts.OnDragStart == nil and w.dragArea.scripts.OnDragStart ~= nil,
     "only title area initiates movement")
@@ -134,7 +134,7 @@ end
 a:RenderWindowLoot(resultFor(column, 2))
 expect(column.rows[1] == originalRow and #frames == frameCount, "shorter result reuses row pool")
 column.rows[1]:Fire("OnEnter")
-state.exists = false; event("PLAYER_TARGET_CHANGED")
+state.inInstance = false; event("ZONE_CHANGED_NEW_AREA")
 expect(column.rows[1].item == nil and not GameTooltip.shown and w.encounterData == nil,
     "context loss removes old rows and tooltip synchronously")
 a, state, event = fixture({ instanceType = "party", instanceID = 100, difficultyID = 23 })
