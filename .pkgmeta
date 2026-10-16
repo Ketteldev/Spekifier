@@ -1,4 +1,4 @@
-﻿package-as: Spekifier
+package-as: Spekifier
 
 # Move runtime contents into the addon root after copying tracked files.
 move-folders:
