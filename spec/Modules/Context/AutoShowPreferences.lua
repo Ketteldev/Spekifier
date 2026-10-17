@@ -7,7 +7,6 @@ local categories = {
     { key = "autoShowNormalRaid", kind = "raid", ids = {3, 4, 9, 14} },
     { key = "autoShowHeroicRaid", kind = "raid", ids = {5, 6, 15} },
     { key = "autoShowMythicRaid", kind = "raid", ids = {16, 233} },
-    { key = "autoShowWorldRaid", kind = "raid", ids = {250} },
 }
 for _, category in ipairs(categories) do
     local key, kind, ids = category.key, category.kind, category.ids
@@ -112,4 +111,40 @@ control:SetChecked(true); control:Fire("OnClick")
 expect(a:GetMainWindow():IsShown(), "checkbox routes immediate refresh")
 a.optionsPanel.autoShow:SetChecked(false); a.optionsPanel.autoShow:Fire("OnClick")
 expect(not a:GetMainWindow():IsShown() and not control:IsEnabled(), "parent checkbox routes dependencies")
+-- Category and class gates apply to every supported difficulty and preserve visit state.
+for _, category in ipairs(categories) do
+    for _, gate in ipairs({"autoShowClasses", "autoShowClass_MAGE",
+        category.kind == "party" and "autoShowDungeons" or "autoShowRaids"}) do
+        local a = fixture({discovery=true, instanceType=category.kind, difficultyID=category.ids[1]},
+            {settings={[gate]=false}})
+        expect(not a:GetMainWindow():IsShown(), "saved gate suppresses " .. gate)
+        a:SetAutoShowPreference(gate, true)
+        expect(a:GetMainWindow():IsShown(), "unshown visit responds to " .. gate)
+        a:SetAutoShowPreference(gate, false)
+        expect(not a:GetMainWindow():IsShown(), "gate closes automatic window " .. gate)
+        a:SetAutoShowPreference(gate, true)
+        expect(not a:GetMainWindow():IsShown(), "gate preserves consumed visit " .. gate)
+        a:ToggleWindow()
+        a:SetAutoShowPreference(gate, false)
+        expect(a:GetMainWindow():IsShown(), "manual survives " .. gate)
+    end
+end
+for index=1,GetNumClasses() do
+    local _, token = GetClassInfo(index)
+    local a = fixture({discovery=true, classToken=token}, {settings={["autoShowClass_"..token]=false}})
+    expect(not a:GetMainWindow():IsShown(), "all runtime classes gate: " .. token)
+    expect(a.optionsPanel.autoShowChildren["autoShowClass_"..token] ~= nil, "runtime class listed")
+    a = fixture({discovery=true, classToken=token}, SpekifierDB)
+    expect(not a:GetMainWindow():IsShown(), "class false survives reload")
+end
+local a = fixture({discovery=true}, {settings={autoShowClass_WARLOCK=false}})
+expect(a:GetMainWindow():IsShown(), "other class choice independent")
+a:SetAutoShowPreference("autoShowClasses", false)
+expect(not a.optionsPanel.autoShowChildren.autoShowClass_MAGE:IsEnabled(), "class controls disabled")
+expect(a:GetSetting("autoShowClass_WARLOCK") == false, "category retains class values")
+local a = fixture({discovery=true, difficultyID=250}, {settings={autoShowRaids=false}})
+expect(not a:GetMainWindow():IsShown(), "World raid follows raid category")
+a:SetAutoShowPreference("autoShowRaids", true)
+expect(a:GetMainWindow():IsShown(), "World raid enables with raid category")
+expect(not a.optionsPanel.autoShowChildren.autoShowWorldRaid, "only four raid children")
 io.write("Auto-show preferences: " .. checks .. " checks passed\n")

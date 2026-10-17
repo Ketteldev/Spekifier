@@ -12,7 +12,7 @@ Enter a supported raid and choose an encounter, or enter a supported Mythic dung
 - [b]Less clutter:[/b] items eligible for every spec appear once in a shared row.
 - [b]Choose with a click:[/b] click a spec header, item row, or column background. The window closes after the game confirms your choice.
 - [b]Item tooltips:[/b] hover to inspect loot and compare it with equipped gear.
-- [b]Reminders you control:[/b] separate automatic-opening options for Mythic+, LFR, Normal, Heroic, Mythic, and World Raid content.
+- [b]Reminders you control:[/b] a master toggle, dungeon and raid categories, individual difficulty choices, and a filter for every class. Uncheck your class to suppress automatic previews across all content.
 - [b]Fit your UI:[/b] choose the Original or Elles skin, move and resize the window, and show or hide the draggable minimap button.
 
 [size=4][b]Getting started[/b][/size]
@@ -46,7 +46,7 @@ You can also use /spekifier in place of /spek.
 
 [size=4][b]Help and feedback[/b][/size]
 
-No automatic preview? Check Auto-show and its content options, make sure you are outside combat, or try /spek toggle. A dismissed prompt stays dismissed through raid target changes or for the current dungeon visit.
+No automatic preview? Check Auto-show, its category/content options, and your class, make sure you are outside combat, or try /spek toggle. A dismissed prompt stays dismissed through raid target changes or for the current dungeon visit.
 
 Loot still loading? Close the Adventure Guide and allow time for item data to arrive.
 
