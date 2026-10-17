@@ -46,7 +46,7 @@ The dungeon preview is labeled **Mythic+**, including when entering an ordinary 
 
 Open **Escape → Options → Addons → Spekifier**, click the window's **Options** gear, right-click the minimap button, or type `/spek options`.
 
-- **Auto-show:** enable or disable automatic previews. Its six choices—**Mythic+**, **LFR**, **Normal Raid**, **Heroic Raid**, **Mythic Raid**, and **World Raid**—control prompts independently and default to on. Mythic+ includes ordinary Mythic entry before a key starts. World Raid controls World difficulty in supported lairs; flexible Mythic uses Mythic Raid. Turning off Auto-show preserves these choices and keeps manual previews available.
+- **Auto-show:** the master toggle controls all automatic previews. **Dungeons** contains **Mythic+** (including ordinary Mythic entry before a key starts). **Raids** contains **LFR**, **Normal**, **Heroic**, and **Mythic**; World difficulty follows the Raids category. **Classes** lists every available class: uncheck a class to suppress all automatic previews while playing it. Turning off a category retains individual choices. All new controls default on, and manual previews remain available. The former World Raid preference is retired in favor of the Raids category.
 - **Hide minimap button:** hide or restore the launcher. Drag the button around the minimap to reposition it.
 - **Window skin:** choose **Original** for Blizzard-style framing and gold accents, or **Elles** for dark panels, subtle borders, and cyan accents. Both skins are built in.
 
@@ -69,7 +69,7 @@ All commands also work with `/spekifier` in place of `/spek`.
 
 ## Troubleshooting
 
-**The window did not open automatically.** Check Auto-show and the relevant content option, ensure you are outside combat, and check the supported content above. A dismissed raid comparison or an already-shown dungeon visit will not keep prompting on target changes. Use `/spek toggle` to reopen it manually.
+**The window did not open automatically.** Check Auto-show, the relevant category/content option, and your class, ensure you are outside combat, and check the supported content above. A dismissed raid comparison or an already-shown dungeon visit will not keep prompting on target changes. Use `/spek toggle` to reopen it manually.
 
 **Loot is loading or unavailable.** Close the Adventure Guide to let pending queries proceed, then allow time for the game to deliver item data. The window displays loading and failure messages instead of presenting partial loot lists as complete. `/spek debug` reports the current context and per-spec data state, even with the preview closed.
 

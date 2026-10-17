@@ -13,7 +13,7 @@ read_globals = {
     "EJ_SelectEncounter", "EJ_SelectInstance", "EJ_SetDifficulty", "EJ_SetLootFilter",
     "GameFontHighlight", "GameTooltip", "GetCursorPosition", "GetDifficultyInfo",
     "GetInstanceInfo", "GetLootSpecialization", "GetMinimapShape",
-    "GetNumSpecializations", "GetSpecialization", "GetSpecializationInfo",
+    "GetNumClasses", "GetClassInfo", "GetNumSpecializations", "GetSpecialization", "GetSpecializationInfo",
     "InCombatLockdown", "IsInInstance", "ITEM_QUALITY_COLORS", "Minimap",
     "SetLootSpecialization", "Settings", "UIParent", "UIDropDownMenu_AddButton",
     "UIDropDownMenu_CreateInfo", "UIDropDownMenu_Initialize",

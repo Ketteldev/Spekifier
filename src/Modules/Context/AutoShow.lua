@@ -14,7 +14,7 @@ local raidPreferences = {
     [14] = "autoShowNormalRaid", [5] = "autoShowHeroicRaid", [6] = "autoShowHeroicRaid",
     [15] = "autoShowHeroicRaid", [7] = "autoShowLFR", [17] = "autoShowLFR",
     [16] = "autoShowMythicRaid", [233] = "autoShowMythicRaid",
-    [250] = "autoShowWorldRaid",
+    [250] = "autoShowRaids",
 }
 local function RequestDungeonData()
     if C_MythicPlus and C_MythicPlus.RequestMapInfo then
@@ -101,7 +101,13 @@ function Spekifier:RefreshAutoShow(event, allowOpening)
         (inRaidInstance and raidPreferences[difficultyID] or nil)
     autoShowState.preferenceEnabled = not not
         (autoShowState.preferenceKey and self:GetSetting(autoShowState.preferenceKey))
-    autoShowState.autoShowPermission = not not (self:GetSetting("enabled") and autoShowState.preferenceEnabled)
+    local classToken
+    if UnitClass then classToken = select(2, UnitClass("player")) end
+    autoShowState.classEnabled = not classToken or self:GetSetting("autoShowClass_" .. classToken)
+    autoShowState.categoryEnabled = self:GetSetting(eligibleDungeon and "autoShowDungeons" or "autoShowRaids")
+    autoShowState.autoShowPermission = not not (self:GetSetting("enabled") and
+        self:GetSetting("autoShowClasses") and autoShowState.classEnabled and
+        autoShowState.categoryEnabled and autoShowState.preferenceEnabled)
     autoShowState.shouldAutoShow = not not (autoShowState.autoShowPermission and
         autoShowState.contextKey and not inCombat)
     -- Validity and permission to prompt are separate: shown visits stay valid.

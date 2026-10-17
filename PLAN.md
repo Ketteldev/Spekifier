@@ -676,6 +676,16 @@ Addon-description documentation (2026-10-11): maintain [descriptions/CURSE_WAGO.
 
 Cause: the workflow uploaded ZIPs with GitHub's default archive wrapping. Existing .pkgmeta already moves runtime contents into one addon root; no evidence establishes that it creates a second addon folder. An extractor's enclosing-folder option can add another directory. The actual BigWigs run and new direct artifact download still require GitHub verification; local packaging does not establish that result. See the outstanding Phase 13 checks below. Upstream references: [single-file upload](https://github.com/actions/upload-artifact/tree/v7#upload-an-individual-file-unzipped), [packager move implementation](https://github.com/BigWigsMods/packager/blob/master/release.sh).
 
+## Phase 16: Layered automatic-opening options
+
+- [x] Add persistent master/category/content/class gates, preserve existing master and difficulty choices, default new settings on, and retain child values while disabled. Replace the World Raid child with the Raids category gate; its old saved value is retained but retired.
+- [x] Discover localized classes using runtime GetNumClasses/GetClassInfo; gate the current player using UnitClass and stable class tokens. No hardcoded runtime class list.
+- [x] Arrange three categories with indented children and a two-column class list; preserve minimap/theme independence and manual preview/visit lifecycle behavior.
+- [x] Update README and both copy-ready descriptions; extend regression coverage across categories, all 13 mocked classes, persistence, immediate suppression, manual preview, consumed visits, unrelated class choices and World difficulty.
+- [x] Pass all eleven native Lua 5.1 suites, syntax/manifest checks, and Luacheck 1.2.0 with zero warnings/errors across 30 files. Validation date: 2026-10-16. Automated results do not establish live acceptance.
+
+Runtime discovery follows [Blizzard's class menu source](https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_ClassMenu/Blizzard_ClassMenu.lua). Phase 16 supersedes Phase 8's flat six-control layout and separate World Raid checkbox procedures; outstanding lifecycle/persistence obligations still apply.
+
 ## Manual Acceptance
 
 Run outstanding checks after all implementation phases are complete. As each phase finishes, append its manual checks here under the source phase; split mixed tasks and preserve the full live procedure. Checked items retain the user's recorded 2026-10-08 confirmation for Phases 1-6.5. Unchecked items are deferred, not passed. Phase 8, Phase 9, Phase 10, and Phase 11 checks are recorded below.
@@ -816,6 +826,14 @@ Follow [workflow behavior and deployment setup](README.md#github-automation). Th
 - [ ] Confirm matching repository secret names in GitHub without exposing token values.
 - [ ] Commit the corrected workflow and metadata, publish a release containing those changes, and verify addon-site uploads and GitHub ZIP attachment in Actions logs. Preserve outstanding live release acceptance; see [deployment setup](README.md#deployment-setup).
 
+### Phase 16: Layered automatic-opening options
+
+Candidate: `dist/Spekifier-auto-open-candidate.zip`, built with the Lua packager and ZIP-validated (33 files). Install this candidate for the checks below.
+
+- [ ] In WoW, open options through each entry point; verify Dungeons/Mythic+, Raids/LFR/Normal/Heroic/Mythic, and every localized class fit without clipping at supported UI scales. Verify two-column class spacing, explanation, theme and minimap controls.
+- [ ] Disable Mage, Warlock and another class; verify no raid or Mythic+ entry prompt for those classes, unaffected classes still prompt, category/master disabling retains choices, and mixed preferences persist through reload/login and upgrade. Verify World difficulty follows Raids and flexible Mythic follows Mythic.
+- [ ] Verify disabling a matching gate closes automatic previews immediately, manual previews remain usable, enabling an unshown eligible visit permits its first prompt, and consumed/dismissed visits never rearm; exercise combat deferral, duplicate zone events and exit/re-entry. Record client/build and results here. Live WoW is unavailable in this workspace.
+
 ## Definition of Done
 
 - [ ] Options are reachable through the game's Addons settings, preview gear, options commands, and minimap launcher; the hide checkbox and minimap commands immediately synchronize and persist button visibility.
@@ -827,5 +845,5 @@ Follow [workflow behavior and deployment setup](README.md#github-automation). Th
 - [ ] Non-Mythic dungeon entry, target changes, outdoor areas, and combat never trigger an automatic popup; raid auto-opening is once on entry per visit; no ordinary or boss fight can rearm a shown prompt.
 - [ ] Dismissal, encounter/target changes, reloads, and delayed data cannot restore stale or misleading UI.
 - [ ] Unsupported encounters are handled clearly, supported scope is documented, and the integrated workflow has been verified in WoW.
-- [ ] A persistent parent Auto-show option and independent Mythic+, LFR, Normal Raid, Heroic Raid, Mythic Raid, and World Raid options control automatic opening while preserving manual preview and dismissal behavior.
+- [ ] Persistent master, Dungeons/Raids/Classes category, Mythic+, four raid difficulty, and runtime-discovered class options control automatic opening while preserving manual preview and dismissal behavior.
 - [ ] Players can choose complete Original and Elles window skins from a persistent, extensible options dropdown, with both appearances visually validated and existing interactions preserved.

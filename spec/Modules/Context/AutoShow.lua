@@ -152,6 +152,13 @@ local function fixture(overrides, saved)
     function UnitExists() readTarget(); return state.exists end
     function UnitCanAttack() readTarget(); return state.attackable end
     function UnitIsDeadOrGhost() readTarget(); return state.dead end
+    function UnitClass() return state.classToken or "Mage", state.classToken or "MAGE" end
+    function GetNumClasses() return 13 end
+    function GetClassInfo(index)
+        local tokens = {"WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "DEATHKNIGHT",
+            "SHAMAN", "MAGE", "WARLOCK", "MONK", "DRUID", "DEMONHUNTER", "EVOKER"}
+        return tokens[index], tokens[index], index
+    end
     function UnitClassification() readTarget(); return state.classification end
     function UnitLevel() readTarget(); return state.level end
     function UnitGUID()

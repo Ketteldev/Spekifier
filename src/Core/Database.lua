@@ -7,6 +7,7 @@ function Spekifier:InitializeDatabase()
     if type(SpekifierDB.settings) ~= "table" then SpekifierDB.settings = {} end
     local defaults = { autoShowMythicPlus = true, autoShowLFR = true, autoShowNormalRaid = true,
         autoShowWorldRaid = true, autoShowHeroicRaid = true, autoShowMythicRaid = true, enabled = true,
+        autoShowDungeons = true, autoShowRaids = true, autoShowClasses = true,
         debugEnabled = false, hideMinimapButton = false, minimapAngle = 225 }
     for key, value in pairs(defaults) do
         if SpekifierDB.settings[key] == nil then SpekifierDB.settings[key] = value end
@@ -24,6 +25,7 @@ end
 
 function Spekifier:GetSetting(key)
     if not self.db or not self.db.settings then return nil end
+    if key:match("^autoShowClass_") and self.db.settings[key] == nil then return true end
     return self.db.settings[key]
 end
 

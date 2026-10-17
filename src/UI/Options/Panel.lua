@@ -15,27 +15,46 @@ function Spekifier:ToggleMinimapButton()
 end
 
 local autoShowOptions = {
-    { "autoShowMythicPlus", "Mythic+" }, { "autoShowLFR", "LFR" },
-    { "autoShowNormalRaid", "Normal Raid" }, { "autoShowHeroicRaid", "Heroic Raid" },
-    { "autoShowMythicRaid", "Mythic Raid" }, { "autoShowWorldRaid", "World Raid" },
+    { "autoShowDungeons", "Dungeons" }, { "autoShowRaids", "Raids" },
+    { "autoShowClasses", "Classes" },
+    { "autoShowMythicPlus", "Mythic+", "autoShowDungeons" },
+    { "autoShowLFR", "LFR", "autoShowRaids" },
+    { "autoShowNormalRaid", "Normal", "autoShowRaids" },
+    { "autoShowHeroicRaid", "Heroic", "autoShowRaids" },
+    { "autoShowMythicRaid", "Mythic", "autoShowRaids" },
 }
+
+function Spekifier:GetAutoShowOptions()
+    local options = {}
+    for _, option in ipairs(autoShowOptions) do options[#options + 1] = option end
+    if GetNumClasses and GetClassInfo then
+        for index = 1, GetNumClasses() do
+            local name, token = GetClassInfo(index)
+            if name and token then
+                options[#options + 1] = { "autoShowClass_" .. token, name, "autoShowClasses" }
+            end
+        end
+    end
+    return options
+end
 
 function Spekifier:RefreshAutoShowOptions()
     local panel = self.optionsPanel
     if not panel then return end
     local enabled = not not self:GetSetting("enabled")
     panel.autoShow:SetChecked(enabled)
-    for _, option in ipairs(autoShowOptions) do
+    for _, option in ipairs(self:GetAutoShowOptions()) do
         local control = panel.autoShowChildren[option[1]]
         control:SetChecked(not not self:GetSetting(option[1]))
-        control:SetEnabled(enabled)
-        control.label:SetAlpha(enabled and 1 or 0.5)
+        local active = enabled and (not option[3] or self:GetSetting(option[3]))
+        control:SetEnabled(not not active)
+        control.label:SetAlpha(active and 1 or 0.5)
     end
 end
 
 function Spekifier:SetAutoShowPreference(key, value)
     local valid = key == "enabled"
-    for _, option in ipairs(autoShowOptions) do
+    for _, option in ipairs(self:GetAutoShowOptions()) do
         if option[1] == key then valid = true end
     end
     if not valid then return end
@@ -81,18 +100,28 @@ function Spekifier:InitializeOptions()
         end
         panel.autoShow = createOption("enabled", "Auto-show", checkbox, 0)
         panel.autoShowChildren = {}
-        local previous = panel.autoShow
-        for index, option in ipairs(autoShowOptions) do
-            previous = createOption(option[1], option[2], previous, index == 1 and 24 or 0)
-            panel.autoShowChildren[option[1]] = previous
+        local columns = { autoShowDungeons = 0, autoShowRaids = 170, autoShowClasses = 340 }
+        local rows = {}
+        for _, option in ipairs(self:GetAutoShowOptions()) do
+            local group = option[3] or option[1]
+            local row = rows[group] or 0
+            local x = columns[group] + (option[3] and 24 or 0)
+            local y = row
+            if group == "autoShowClasses" and row > 7 then x = x + 170; y = row - 7 end
+            local control = createOption(option[1], option[2], panel.autoShow, 0)
+            control:ClearAllPoints()
+            control:SetPoint("TOPLEFT", panel.autoShow, "BOTTOMLEFT", x, -4 - y * 32)
+            panel.autoShowChildren[option[1]] = control
+            rows[group] = row + 1
         end
         local explanation = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        explanation:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -12)
+        explanation:SetPoint("TOPLEFT", panel.autoShow, "BOTTOMLEFT", 24, -280)
         explanation:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
         explanation:SetJustifyH("LEFT")
         explanation:SetWordWrap(true)
         explanation:SetText("Mythic+ controls the end-of-run loot preview on ordinary Mythic " ..
-            "and active Mythic+ dungeon entry, including before a key starts.")
+            "and active Mythic+ dungeon entry, including before a key starts. " ..
+            "Unchecked classes never auto-open. Category toggles retain individual choices.")
         panel.autoShowExplanation = explanation
         if self.CreateSkinDropdown then self:CreateSkinDropdown(panel, explanation) end
         panel:SetScript("OnShow", function()
